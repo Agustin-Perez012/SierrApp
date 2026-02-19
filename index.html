@@ -133,16 +133,24 @@
 </div>
 
 <script>
-    // 1. Pega aquí los datos que te dé la consola de Firebase
-const firebaseConfig = {
-  apiKey: "AIzaSyB1ivVZmMy29zJQbi_5m5mv151jn2k2xPQ", // Asegúrate de poner la clave completa que viste en la alerta
-  authDomain: "sierras-trazabilidad.firebaseapp.com",
-  projectId: "sierras-trazabilidad",
-  storageBucket: "sierras-trazabilidad.firebasestorage.app",
-  messagingSenderId: "926057948507",
-  appId: "1:926057948507:web:4c8d13ec5a5d39de8be67e",
-  measurementId: "G-0V2W2VPYJ0"
-};
+  // 1. Pega aquí los datos que te dé la consola de Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyB1ivVZmMy29zJQbi_5m5mv151jn2k2xPQ", 
+      authDomain: "sierras-trazabilidad.firebaseapp.com",
+      projectId: "sierras-trazabilidad",
+      storageBucket: "sierras-trazabilidad.firebasestorage.app",
+      messagingSenderId: "926057948507",
+      appId: "1:926057948507:web:4c8d13ec5a5d39de8be67e",
+      measurementId: "G-0V2W2VPYJ0"
+    };
+
+    // 2. INICIALIZAR CONEXIÓN (¡Aquí están las líneas mágicas!)
+    firebase.initializeApp(firebaseConfig);
+    const dbRef = firebase.database().ref();
+
+    // VARIABLES GLOBALES (Recuperadas para que no dé error)
+    const diametros = [520, 400, 350, 300, 250]; // <-- Modifica estos números si tus sierras tienen otras medidas
+    let dActual = null;
     let eActual = null;
     let db = {};
 
@@ -153,6 +161,7 @@ const firebaseConfig = {
         diametros.forEach(d => { if (!db[d]) db[d] = []; });
         render(); // Se actualiza solo cada vez que Firebase detecta un cambio
     });
+
 
     function guardar() {
         // Esto guarda el objeto 'db' completo en tu Firebase
@@ -259,6 +268,7 @@ const firebaseConfig = {
 </script>
 </body>
 </html>
+
 
 
 
