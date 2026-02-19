@@ -134,23 +134,15 @@
 
 <script>
     // 1. Pega aquí los datos que te dé la consola de Firebase
-    const firebaseConfig = {
-   apiKey: ""," correccion de seguridad"
+const firebaseConfig = {
+  apiKey: "AIzaSyB1ivVZmMy29zJQbi_5m5m...", // Asegúrate de poner la clave completa que viste en la alerta
   authDomain: "sierras-trazabilidad.firebaseapp.com",
   projectId: "sierras-trazabilidad",
   storageBucket: "sierras-trazabilidad.firebasestorage.app",
   messagingSenderId: "926057948507",
   appId: "1:926057948507:web:4c8d13ec5a5d39de8be67e",
   measurementId: "G-0V2W2VPYJ0"
-    };
-
-    // 2. Inicializar conexión
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
-    const dbRef = database.ref('inventario_sierras');
-
-    const diametros = [520, 430, 380, 350, 200];
-    let dActual = null;
+};
     let eActual = null;
     let db = {};
 
@@ -267,6 +259,7 @@
 </script>
 </body>
 </html>
+
 
 
 
