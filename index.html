@@ -5,11 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema Maestro de Sierras - Pro</title>
     <style>
-        /* Se agregó el color morado para el nuevo estado 'pendiente' */
         :root { 
             --stock: #27ae60; 
             --uso: #2980b9; 
-            --pendiente: #8e44ad; /* Color para preparación */
+            --pendiente: #8e44ad; 
             --afilar: #f39c12; 
             --baja: #e74c3c; 
             --dark: #2c3e50; 
@@ -17,7 +16,7 @@
         body { font-family: 'Segoe UI', sans-serif; background-color: #ffffff; margin: 20px; }
         .container { max-width: 1250px; margin: auto; }
         
-        /* Dashboard: Ahora con 5 columnas para que entre el nuevo estado */
+        /* Dashboard */
         .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 25px; }
         .stat-card { background: rgb(255, 255, 255); padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-top: 6px solid #ccc; cursor: pointer; transition: 0.2s; }
         .stat-card.active { transform: scale(1.02); border-bottom: 4px solid var(--dark); background: #fffdf5; }
@@ -34,11 +33,14 @@
         .tab-btn.active { background: var(--uso); color: white; }
 
         .controls-row { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
-        .panel-busqueda { flex: 2; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 10px; }
-        .panel-registro { flex: 1; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 10px; }
+        .panel-busqueda { flex: 1.5; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 10px; }
         
-        input[type="text"] { padding: 12px; border-radius: 6px; border: 1px solid #ddd; width: 100%; font-size: 1em; }
-        .search-icon { font-size: 1.2em; }
+        /* Panel registro ajustado para el nuevo selector */
+        .panel-registro { flex: 2; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        
+        input[type="text"], select { padding: 12px; border-radius: 6px; border: 1px solid #ddd; font-size: 1em; }
+        input[type="text"] { flex: 1; }
+        select { background: white; cursor: pointer; }
 
         .panel-tabla { background: rgb(124, 162, 218); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; min-width: 600px; }
@@ -56,8 +58,7 @@
         .modal-content { background: white; margin: 5% auto; padding: 30px; border-radius: 15px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto; position: relative; }
         .close-btn { position: absolute; right: 20px; top: 15px; cursor: pointer; font-size: 28px; color: #888; }
         .historial-item { padding: 12px; border-left: 4px solid var(--uso); margin-bottom: 10px; background: #f9f9f9; border-radius: 0 8px 8px 0; }
-        .historial-item small { color: #888; display: block; margin-bottom: 4px; }
-
+        
         .btn-hist { background: var(--dark); color: white; border: none; padding: 7px 12px; border-radius: 5px; cursor: pointer; font-size: 0.75em; }
         .btn-sm { padding: 7px 12px; border: none; border-radius: 5px; color: white; cursor: pointer; font-size: 0.75em; margin-right: 3px; font-weight: bold; }
         .logo-empresa { position: absolute; top: 10px; left: 10px; max-width: 80px; height: auto; z-index: 1000; }
@@ -67,7 +68,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
 <body>
-    <img src="logo1.jpg" class="logo-empresa">
+    <img src="logo1.jpg" class="logo-empresa" onerror="this.style.display='none'">
 
     <div class="container">
     <h1 style="text-align: center; color: var(--dark); margin-bottom: 30px;">Seguimiento de Sierras Circular</h1>
@@ -100,11 +101,19 @@
     <div class="controls-row">
         <div class="panel-busqueda">
             <span class="search-icon">🔍</span>
-            <input type="text" id="inputBuscar" placeholder="Buscar por código de sierra..." onkeyup="render()">
+            <input type="text" id="inputBuscar" placeholder="Buscar código..." onkeyup="render()">
         </div>
         <div class="panel-registro">
             <input type="text" id="nuevoCodigo" placeholder="Nuevo Código">
-            <button onclick="agregarSierra()" style="padding: 12px 20px; background: var(--stock); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; white-space: nowrap;">+ Registrar en Ø <span id="regDiam">520</span></button>
+            
+            <select id="nuevoEstado">
+                <option value="stock">Cargar en Stock</option>
+                <option value="uso">Cargar en Máquina</option>
+                <option value="pendiente">Cargar en "Por Afilar"</option>
+                <option value="afilar">Cargar en "En Afilado"</option>
+            </select>
+
+            <button onclick="agregarSierra()" style="padding: 12px 20px; background: var(--stock); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; white-space: nowrap;">+ Registrar Ø <span id="regDiam">520</span></button>
         </div>
     </div>
 
@@ -117,7 +126,7 @@
                     <th>Estado Actual</th>
                     <th>Afilados</th>
                     <th>Hoja de Vida</th>
-                    <th>Acciones de Movimiento</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -159,23 +168,30 @@
         render();
     });
 
-    function guardar() {
-        dbRef.set(db);
-    }
+    function guardar() { dbRef.set(db); }
 
     function agregarSierra() {
         const cod = document.getElementById('nuevoCodigo').value.trim().toUpperCase();
+        const estadoInic = document.getElementById('nuevoEstado').value;
         if (!cod) return;
+        
         const diam = dActual || 520;
         const existe = Object.values(db).flat().find(s => s.id === cod);
-        if(existe) return alert("¡Atención! El código " + cod + " ya está registrado.");
+        if(existe) return alert("¡Atención! El código " + cod + " ya existe.");
+
+        // Texto formal para el historial según el estado inicial
+        const nombresEstado = { stock: "STOCK", uso: "MÁQUINA", pendiente: "POR AFILAR", afilar: "AFILADO" };
 
         db[diam].push({
             id: cod, 
-            estado: 'stock', 
+            estado: estadoInic, 
             afilados: 0,
-            eventos: [{ fecha: new Date().toLocaleString(), msg: "Sierra registrada en el sistema." }]
+            eventos: [{ 
+                fecha: new Date().toLocaleString(), 
+                msg: `Registro inicial: Sierra dada de alta directamente en estado ${nombresEstado[estadoInic]}.` 
+            }]
         });
+        
         document.getElementById('nuevoCodigo').value = '';
         guardar();
     }
@@ -184,7 +200,6 @@
         const s = db[diam].find(x => x.id === cod);
         let mensaje = "";
 
-        // Lógica de mensajes mejorada
         if (nuevoEstado === 'uso') mensaje = "Sierra montada en máquina.";
         if (nuevoEstado === 'pendiente') mensaje = "Retirada de máquina. En preparación para afilado.";
         if (nuevoEstado === 'afilar') mensaje = "Sierra enviada a taller de afilado.";
@@ -225,7 +240,6 @@
 
         document.getElementById('regDiam').innerText = dActual || 520;
 
-        // Totales (incluyendo 'pendiente')
         const tot = { stock: 0, uso: 0, pendiente: 0, afilar: 0, baja: 0 };
         diametros.forEach(d => db[d].forEach(s => { if(tot[s.estado] !== undefined) tot[s.estado]++; }));
         
@@ -244,33 +258,26 @@
                 const cumpleBusqueda = s.id.toLowerCase().includes(busqueda);
 
                 if (cumpleDiam && cumpleEstado && cumpleBusqueda) {
-                    // Traducción visual de estados
-                    let nombreEstado = s.estado;
-                    if(s.estado === 'pendiente') nombreEstado = 'Por Afilar';
-                    if(s.estado === 'uso') nombreEstado = 'En Máquina';
+                    let nombreEstado = s.estado === 'pendiente' ? 'Por Afilar' : s.estado === 'uso' ? 'En Máquina' : s.estado;
 
                     html += `<tr>
-                        <td><span style="font-weight:bold; color:#000">${d}mm</span></td>
+                        <td><span style="font-weight:bold">${d}mm</span></td>
                         <td><code style="font-size:1.1em; background:#f0f0f0; padding:2px 5px; border-radius:3px">${s.id}</code></td>
                         <td><span class="badge badge-${s.estado}">${nombreEstado}</span></td>
                         <td><span style="font-weight:bold">🔁 ${s.afilados}</span></td>
                         <td><button class="btn-hist" onclick="verHistorial(${d},'${s.id}')">Ver Hoja de Vida</button></td>
                         <td>
                             ${s.estado==='stock'?`<button class="btn-sm" style="background:var(--uso)" onclick="mover(${d},'${s.id}','uso')">A Máquina</button>`:''}
-                            
-                            ${s.estado==='uso'?`<button class="btn-sm" style="background:var(--pendiente)" onclick="mover(${d},'${s.id}','pendiente')">Retirar para Afilado</button>`:''}
-                            
+                            ${s.estado==='uso'?`<button class="btn-sm" style="background:var(--pendiente)" onclick="mover(${d},'${s.id}','pendiente')">Retirar (Afilado)</button>`:''}
                             ${s.estado==='pendiente'?`<button class="btn-sm" style="background:var(--afilar)" onclick="mover(${d},'${s.id}','afilar')">Enviar a Taller</button>`:''}
-                            
                             ${s.estado==='afilar'?`<button class="btn-sm" style="background:var(--stock)" onclick="mover(${d},'${s.id}','stock')">Recibir Afilada</button>`:''}
-                            
                             ${s.estado!=='baja'?`<button class="btn-sm" style="background:var(--baja)" onclick="mover(${d},'${s.id}','baja')">Baja</button>`:''}
                         </td>
                     </tr>`;
                 }
             });
         });
-        document.querySelector("#tablaSierras tbody").innerHTML = html || '<tr><td colspan="6" style="text-align:center; padding:30px; color:#999">No se encontraron sierras.</td></tr>';
+        document.querySelector("#tablaSierras tbody").innerHTML = html || '<tr><td colspan="6" style="text-align:center; padding:30px; color:#999">No hay sierras.</td></tr>';
     }
 
     function filtrarEstado(e) { eActual = e; dActual = null; render(); }
