@@ -27,7 +27,7 @@
         .login-box input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
         .login-box button { width: 100%; padding: 10px; background: var(--uso); color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
 
-        /* Main UI (Hidden by default) */
+        /* Main UI */
         #main-content { display: none; }
         .header-app { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         
@@ -52,13 +52,12 @@
         .controls-row { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
         .panel-busqueda { flex: 1.5; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 10px; }
         
-        /* Solo Supervisor ve esto */
         .panel-registro { flex: 2; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         
         input[type="text"], select { padding: 12px; border-radius: 6px; border: 1px solid #ddd; font-size: 1em; }
         input[type="text"] { flex: 1; }
 
-       .panel-tabla { background: rgb(10, 105, 247); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow-x: auto; }
+        .panel-tabla { background: rgb(10, 105, 247); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; min-width: 600px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
         th { background: #f8f9fa; color: #333; font-size: 0.8em; text-transform: uppercase; }
@@ -142,7 +141,9 @@
                     <option value="pendiente">Cargar en "Por Afilar"</option>
                     <option value="afilar">Cargar en "En Afilado"</option>
                 </select>
-                <button onclick="agregarSierra()" style="padding: 12px 20px; background: var(--stock); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">+ Registrar Ø <span id="regDiam">520</span></button>
+                <button onclick="agregarSierra()" style="padding: 12px 20px; background: var(--stock); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                    + Registrar Ø <span id="regDiam">520</span>
+                </button>
             </div>
         </div>
 
@@ -188,8 +189,7 @@
         const dbRef = firebase.database().ref();
 
         // --- SISTEMA DE ROLES ---
-        let usuarioActual = null; // { nombre: '...', rol: 'supervisor' | 'operario' }
-
+        let usuarioActual = null;
         const USUARIOS = {
             "PEREZA": { pass: "A12PZ", rol: "supervisor", nombre: "Supervisor" },
             "operario": { pass: "1234", rol: "operario", nombre: "Operario Taller" }
@@ -198,14 +198,11 @@
         function login() {
             const u = document.getElementById('user').value;
             const p = document.getElementById('pass').value;
-            
             if(USUARIOS[u] && USUARIOS[u].pass === p) {
                 usuarioActual = USUARIOS[u];
                 document.getElementById('login-overlay').style.display = 'none';
                 document.getElementById('main-content').style.display = 'block';
                 document.getElementById('user-display').innerText = `Sesión: ${usuarioActual.nombre}`;
-                
-                // Mostrar panel registro solo si es supervisor
                 document.getElementById('panelRegistro').style.display = usuarioActual.rol === 'supervisor' ? 'flex' : 'none';
                 render();
             } else {
@@ -239,8 +236,11 @@
             if(usuarioActual.rol !== 'supervisor') return;
             const cod = document.getElementById('nuevoCodigo').value.trim().toUpperCase();
             const estadoInic = document.getElementById('nuevoEstado').value;
-            if (!cod) return;
-            const diam = dActual || 520;
+            if (!cod) return alert("Ingrese un código");
+            
+            // Si está en "TODAS", usamos 520 por defecto, si no, el diámetro seleccionado
+            const diam = dActual || 520; 
+
             const existe = Object.values(db).flat().find(s => s.id === cod);
             if(existe) return alert("Código duplicado");
 
@@ -248,7 +248,7 @@
                 id: cod, 
                 estado: estadoInic, 
                 afilados: 0,
-                eventos: [{ fecha: new Date().toLocaleString(), msg: `Alta por ${usuarioActual.nombre}` }]
+                eventos: [{ fecha: new Date().toLocaleString(), msg: `Alta en Ø${diam} por ${usuarioActual.nombre}` }]
             });
             document.getElementById('nuevoCodigo').value = '';
             guardar();
@@ -257,7 +257,7 @@
         function mover(diam, cod, nuevoEstado) {
             if(usuarioActual.rol !== 'supervisor') return;
             const s = db[diam].find(x => x.id === cod);
-            let mensaje = `Cambiado a ${nuevoEstado} por ${usuarioActual.nombre}`;
+            let mensaje = `Cambiado a ${nuevoEstado.toUpperCase()} por ${usuarioActual.nombre}`;
 
             if (nuevoEstado === 'stock' && s.estado === 'afilar') s.afilados++;
             
@@ -268,7 +268,7 @@
 
         function verHistorial(diam, cod) {
             const s = db[diam].find(x => x.id === cod);
-            document.getElementById('modalTitulo').innerText = `Historial: ${cod}`;
+            document.getElementById('modalTitulo').innerText = `Historial: ${cod} (Ø${diam}mm)`;
             document.getElementById('listaEventos').innerHTML = s.eventos.map(e => `
                 <div class="historial-item">
                     <small>📅 ${e.fecha}</small><br>
@@ -284,6 +284,9 @@
             if(!usuarioActual) return;
             const busqueda = document.getElementById('inputBuscar').value.toLowerCase();
             
+            // ACTUALIZACIÓN DEL BOTÓN DE REGISTRO (Tu duda principal)
+            document.getElementById('regDiam').innerText = dActual || 520;
+
             // Render Tabs
             document.getElementById('tabsDiametros').innerHTML = `<button class="tab-btn ${!dActual ? 'active' : ''}" onclick="dActual=null;render()">TODAS</button>` + 
                 diametros.map(d => `<button class="tab-btn ${d===dActual?'active':''}" onclick="dActual=${d};render()">${d}mm</button>`).join('');
@@ -300,12 +303,13 @@
             let html = "";
             const esSup = usuarioActual.rol === 'supervisor';
             
-            // Ocultar columna acciones si es operario
-            document.querySelectorAll('.col-acciones').forEach(el => el.style.display = esSup ? '' : 'none');
-
             diametros.forEach(d => {
                 db[d].forEach(s => {
-                    if ((!dActual || d === dActual) && (!eActual || s.estado === eActual) && s.id.toLowerCase().includes(busqueda)) {
+                    const cumpleFiltroDiam = !dActual || d === dActual;
+                    const cumpleFiltroEstado = !eActual || s.estado === eActual;
+                    const cumpleBusqueda = s.id.toLowerCase().includes(busqueda);
+
+                    if (cumpleFiltroDiam && cumpleFiltroEstado && cumpleBusqueda) {
                         html += `<tr>
                             <td><b>${d}mm</b></td>
                             <td><code>${s.id}</code></td>
@@ -318,12 +322,15 @@
                                 ${s.estado==='pendiente'?`<button class="btn-sm" style="background:var(--afilar)" onclick="mover(${d},'${s.id}','afilar')">Enviar</button>`:''}
                                 ${s.estado==='afilar'?`<button class="btn-sm" style="background:var(--stock)" onclick="mover(${d},'${s.id}','stock')">Recibir</button>`:''}
                                 <button class="btn-sm" style="background:var(--baja)" onclick="mover(${d},'${s.id}','baja')">Baja</button>
-                            </td>` : ''}
+                            </td>` : '<td style="display:none"></td>'}
                         </tr>`;
                     }
                 });
             });
             document.querySelector("#tablaSierras tbody").innerHTML = html;
+            
+            // Ocultar cabecera de acciones si no es supervisor
+            document.querySelectorAll('.col-acciones').forEach(el => el.style.display = esSup ? '' : 'none');
         }
 
         function filtrarEstado(e) { eActual = (eActual === e) ? null : e; render(); }
@@ -331,4 +338,3 @@
     </script>
 </body>
 </html>
-
