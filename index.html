@@ -57,7 +57,7 @@
         input[type="text"], select { padding: 12px; border-radius: 6px; border: 1px solid #ddd; font-size: 1em; }
         input[type="text"] { flex: 1; }
 
-        .panel-tabla { background: rgb(10, 105, 247); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow-x: auto; }
+        .panel-tabla { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; min-width: 600px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
         th { background: #f8f9fa; color: #333; font-size: 0.8em; text-transform: uppercase; }
@@ -77,6 +77,9 @@
         .btn-hist { background: var(--dark); color: white; border: none; padding: 7px 12px; border-radius: 5px; cursor: pointer; font-size: 0.75em; }
         .btn-sm { padding: 7px 12px; border: none; border-radius: 5px; color: white; cursor: pointer; font-size: 0.75em; margin-right: 3px; font-weight: bold; }
         .btn-logout { background: #95a5a6; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
+        
+        /* Estilo para el indicador de detección */
+        #regDiamLabel { font-weight: bold; color: var(--uso); background: #eee; padding: 2px 6px; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -134,15 +137,15 @@
             </div>
             
             <div class="panel-registro" id="panelRegistro" style="display: none;">
-                <input type="text" id="nuevoCodigo" placeholder="Nuevo Código">
+                <input type="text" id="nuevoCodigo" placeholder="Ingrese Código (Ejem: 2045)">
                 <select id="nuevoEstado">
                     <option value="stock">Cargar en Stock</option>
                     <option value="uso">Cargar en Máquina</option>
                     <option value="pendiente">Cargar en "Por Afilar"</option>
                     <option value="afilar">Cargar en "En Afilado"</option>
                 </select>
-                <button onclick="agregarSierra()" style="padding: 12px 20px; background: var(--stock); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
-                    + Registrar Ø <span id="regDiam">520</span>
+                <button id="btnRegistrar" onclick="agregarSierra()" style="padding: 12px 20px; background: var(--stock); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                    + Registrar Ø <span id="regDiam">---</span>
                 </button>
             </div>
         </div>
@@ -232,26 +235,59 @@
 
         function guardar() { dbRef.set(db); }
 
+        // --- DETECCIÓN AUTOMÁTICA DE DIÁMETRO ---
+        function obtenerDiametroPorCodigo(codigo) {
+            const num = parseInt(codigo.replace(/\D/g, "")); 
+            if (isNaN(num)) return null;
+
+            if (num >= 3000) return 200;  // 3000 para arriba
+            if (num >= 2000) return 520;  // 2000-2999
+            if (num >= 1000) return 430;  // 1000-1999
+            if (num >= 500)  return 380;  // 500-999
+            if (num >= 100)  return 350;  // 100-499
+            return null;
+        }
+
+        // Feedback en tiempo real al escribir código
+        document.getElementById('nuevoCodigo').addEventListener('input', (e) => {
+            const d = obtenerDiametroPorCodigo(e.target.value);
+            const btn = document.getElementById('btnRegistrar');
+            const label = document.getElementById('regDiam');
+            if(d) {
+                label.innerText = d;
+                btn.style.opacity = "1";
+                btn.style.cursor = "pointer";
+            } else {
+                label.innerText = "---";
+                btn.style.opacity = "0.6";
+            }
+        });
+
         function agregarSierra() {
             if(usuarioActual.rol !== 'supervisor') return;
-            const cod = document.getElementById('nuevoCodigo').value.trim().toUpperCase();
+            const codInput = document.getElementById('nuevoCodigo');
+            const cod = codInput.value.trim().toUpperCase();
             const estadoInic = document.getElementById('nuevoEstado').value;
+            
             if (!cod) return alert("Ingrese un código");
             
-            // Si está en "TODAS", usamos 520 por defecto, si no, el diámetro seleccionado
-            const diam = dActual || 520; 
+            const diam = obtenerDiametroPorCodigo(cod);
+            if (!diam) return alert("❌ Código fuera de rango válido.");
 
             const existe = Object.values(db).flat().find(s => s.id === cod);
-            if(existe) return alert("Código duplicado");
+            if(existe) return alert("⚠️ Código duplicado en el sistema");
 
             db[diam].push({
                 id: cod, 
                 estado: estadoInic, 
                 afilados: 0,
-                eventos: [{ fecha: new Date().toLocaleString(), msg: `Alta en Ø${diam} por ${usuarioActual.nombre}` }]
+                eventos: [{ fecha: new Date().toLocaleString(), msg: `Alta automática en Ø${diam}mm por ${usuarioActual.nombre}` }]
             });
-            document.getElementById('nuevoCodigo').value = '';
+
+            codInput.value = '';
+            document.getElementById('regDiam').innerText = "---";
             guardar();
+            alert(`✅ Registrada sierra ${cod} en medida Ø${diam}mm`);
         }
 
         function mover(diam, cod, nuevoEstado) {
@@ -284,9 +320,6 @@
             if(!usuarioActual) return;
             const busqueda = document.getElementById('inputBuscar').value.toLowerCase();
             
-            // ACTUALIZACIÓN DEL BOTÓN DE REGISTRO (Tu duda principal)
-            document.getElementById('regDiam').innerText = dActual || 520;
-
             // Render Tabs
             document.getElementById('tabsDiametros').innerHTML = `<button class="tab-btn ${!dActual ? 'active' : ''}" onclick="dActual=null;render()">TODAS</button>` + 
                 diametros.map(d => `<button class="tab-btn ${d===dActual?'active':''}" onclick="dActual=${d};render()">${d}mm</button>`).join('');
@@ -328,8 +361,6 @@
                 });
             });
             document.querySelector("#tablaSierras tbody").innerHTML = html;
-            
-            // Ocultar cabecera de acciones si no es supervisor
             document.querySelectorAll('.col-acciones').forEach(el => el.style.display = esSup ? '' : 'none');
         }
 
