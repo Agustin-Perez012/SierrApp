@@ -8,6 +8,8 @@
         :root { 
             --stock: #27ae60; 
             --uso: #2980b9; 
+            /* 1. Agregamos el color para el nuevo estado 'desafiladas' */
+            --desafiladas: #d35400; 
             --pendiente: #8e44ad; 
             --afilar: #f39c12; 
             --baja: #e74c3c; 
@@ -34,11 +36,14 @@
         .container { max-width: 1250px; margin: auto; position: relative; }
         
         /* Dashboard */
-        .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 25px; }
+        /* 2. Cambiamos las columnas de la grilla de 5 a 6 para que quepa la nueva tarjeta */
+        .stats-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 15px; margin-bottom: 25px; }
         .stat-card { background: white; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-top: 6px solid #ccc; cursor: pointer; transition: 0.2s; }
         .stat-card.active { transform: scale(1.02); border-bottom: 4px solid var(--dark); background: #fffdf5; }
         .stat-card.stock { border-top-color: var(--stock); }
         .stat-card.uso { border-top-color: var(--uso); }
+        /* 3. Estilo del borde para la tarjeta desafiladas */
+        .stat-card.desafiladas { border-top-color: var(--desafiladas); }
         .stat-card.pendiente { border-top-color: var(--pendiente); }
         .stat-card.afilar { border-top-color: var(--afilar); }
         .stat-card.baja { border-top-color: var(--baja); }
@@ -58,7 +63,6 @@
         input[type="text"] { flex: 1; }
 
         .panel-tabla { background: rgb(113, 186, 255); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow-x: auto; }
-
         table { width: 100%; border-collapse: collapse; min-width: 600px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
         th { background: #f8f9fa; color: #333; font-size: 0.8em; text-transform: uppercase; }
@@ -66,6 +70,8 @@
         .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75em; font-weight: bold; text-transform: uppercase; }
         .badge-stock { background: #eafaf1; color: var(--stock); }
         .badge-uso { background: #ebf5fb; color: var(--uso); }
+        /* 4. Estilo de la etiqueta para la tabla */
+        .badge-desafiladas { background: #fae5d3; color: var(--desafiladas); }
         .badge-pendiente { background: #f4ecf7; color: var(--pendiente); }
         .badge-afilar { background: #fef5e7; color: var(--afilar); }
         .badge-baja { background: #fdedec; color: var(--baja); }
@@ -79,7 +85,6 @@
         .btn-sm { padding: 7px 12px; border: none; border-radius: 5px; color: white; cursor: pointer; font-size: 0.75em; margin-right: 3px; font-weight: bold; }
         .btn-logout { background: #95a5a6; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
         
-        /* Estilo para el indicador de detección */
         #regDiamLabel { font-weight: bold; color: var(--uso); background: #eee; padding: 2px 6px; border-radius: 4px; }
     </style>
 </head>
@@ -115,6 +120,10 @@
                 <span class="stat-value" id="total-uso">0</span>
                 <span class="stat-label">En Máquina</span>
             </div>
+            <div class="stat-card desafiladas" onclick="filtrarEstado('desafiladas')" id="card-desafiladas">
+                <span class="stat-value" id="total-desafiladas">0</span>
+                <span class="stat-label">Desafiladas</span>
+            </div>
             <div class="stat-card pendiente" onclick="filtrarEstado('pendiente')" id="card-pendiente">
                 <span class="stat-value" id="total-pendiente">0</span>
                 <span class="stat-label">Por Afilar</span>
@@ -142,6 +151,7 @@
                 <select id="nuevoEstado">
                     <option value="stock">Cargar en Stock</option>
                     <option value="uso">Cargar en Máquina</option>
+                    <option value="desafiladas">Cargar en "Desafiladas"</option>
                     <option value="pendiente">Cargar en "Por Afilar"</option>
                     <option value="afilar">Cargar en "En Afilado"</option>
                 </select>
@@ -196,6 +206,7 @@
         let usuarioActual = null;
         const USUARIOS = {
             "PEREZA": { pass: "A12PZ", rol: "supervisor", nombre: "Supervisor" },
+            "MOSCATTE.J": { pass: "MOSCA", rol: "supervisor", nombre: "Supervisor" },
             "operario": { pass: "1234", rol: "operario", nombre: "Operario Taller" }
         };
 
@@ -236,20 +247,18 @@
 
         function guardar() { dbRef.set(db); }
 
-        // --- DETECCIÓN AUTOMÁTICA DE DIÁMETRO ---
         function obtenerDiametroPorCodigo(codigo) {
             const num = parseInt(codigo.replace(/\D/g, "")); 
             if (isNaN(num)) return null;
 
-            if (num >= 3000) return 200;  // 3000 para arriba
-            if (num >= 2000) return 520;  // 2000-2999
-            if (num >= 1000) return 430;  // 1000-1999
-            if (num >= 500)  return 380;  // 500-999
-            if (num >= 100)  return 350;  // 100-499
+            if (num >= 3000) return 200;  
+            if (num >= 2000) return 520;  
+            if (num >= 1000) return 430;  
+            if (num >= 500)  return 380;  
+            if (num >= 100)  return 350;  
             return null;
         }
 
-        // Feedback en tiempo real al escribir código
         document.getElementById('nuevoCodigo').addEventListener('input', (e) => {
             const d = obtenerDiametroPorCodigo(e.target.value);
             const btn = document.getElementById('btnRegistrar');
@@ -321,19 +330,20 @@
             if(!usuarioActual) return;
             const busqueda = document.getElementById('inputBuscar').value.toLowerCase();
             
-            // Render Tabs
             document.getElementById('tabsDiametros').innerHTML = `<button class="tab-btn ${!dActual ? 'active' : ''}" onclick="dActual=null;render()">TODAS</button>` + 
                 diametros.map(d => `<button class="tab-btn ${d===dActual?'active':''}" onclick="dActual=${d};render()">${d}mm</button>`).join('');
 
-            // Totales
-            const tot = { stock: 0, uso: 0, pendiente: 0, afilar: 0, baja: 0 };
-            diametros.forEach(d => db[d].forEach(s => tot[s.estado]++));
+            // 7. Agregamos 'desafiladas' al contador total
+            const tot = { stock: 0, uso: 0, desafiladas: 0, pendiente: 0, afilar: 0, baja: 0 };
+            diametros.forEach(d => db[d].forEach(s => {
+                if(tot[s.estado] !== undefined) tot[s.estado]++;
+            }));
+            
             for (let k in tot) {
                 document.getElementById(`total-${k}`).innerText = tot[k];
                 document.getElementById(`card-${k}`).classList.toggle('active', eActual === k);
             }
 
-            // Tabla
             let html = "";
             const esSup = usuarioActual.rol === 'supervisor';
             
@@ -344,6 +354,7 @@
                     const cumpleBusqueda = s.id.toLowerCase().includes(busqueda);
 
                     if (cumpleFiltroDiam && cumpleFiltroEstado && cumpleBusqueda) {
+                        // 8. Actualizamos la lógica de botones para incluir el nuevo flujo
                         html += `<tr>
                             <td><b>${d}mm</b></td>
                             <td><code>${s.id}</code></td>
@@ -352,7 +363,8 @@
                             <td><button class="btn-hist" onclick="verHistorial(${d},'${s.id}')">Ver Hoja</button></td>
                             ${esSup ? `<td>
                                 ${s.estado==='stock'?`<button class="btn-sm" style="background:var(--uso)" onclick="mover(${d},'${s.id}','uso')">Poner</button>`:''}
-                                ${s.estado==='uso'?`<button class="btn-sm" style="background:var(--pendiente)" onclick="mover(${d},'${s.id}','pendiente')">Retirar</button>`:''}
+                                ${s.estado==='uso'?`<button class="btn-sm" style="background:var(--desafiladas)" onclick="mover(${d},'${s.id}','desafiladas')">Desafilar</button>`:''}
+                                ${s.estado==='desafiladas'?`<button class="btn-sm" style="background:var(--pendiente)" onclick="mover(${d},'${s.id}','pendiente')">Preparar</button>`:''}
                                 ${s.estado==='pendiente'?`<button class="btn-sm" style="background:var(--afilar)" onclick="mover(${d},'${s.id}','afilar')">Enviar</button>`:''}
                                 ${s.estado==='afilar'?`<button class="btn-sm" style="background:var(--stock)" onclick="mover(${d},'${s.id}','stock')">Recibir</button>`:''}
                                 <button class="btn-sm" style="background:var(--baja)" onclick="mover(${d},'${s.id}','baja')">Baja</button>
@@ -370,4 +382,3 @@
     </script>
 </body>
 </html>
-
