@@ -1,162 +1,440 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema Maestro de Sierras - Pro</title>
-    <style>
-        :root { 
-            --stock: #27ae60; 
-            --uso: #2980b9; 
-            /* 1. Agregamos el color para el nuevo estado 'desafiladas' */
-            --desafiladas: #d35400; 
-            --pendiente: #8e44ad; 
-            --afilar: #f39c12; 
-            --baja: #e74c3c; 
-            --dark: #2c3e50; 
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel de Herramientas — Metal Duro / Diamante</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#223749">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Herramientas">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fjalla+One&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --bg: #F2EFE7;
+        --surface: #FFFFFF;
+        --ink: #1C2530;
+        --ink-soft: #626C78;
+        --line: #DBD4C3;
+        --steel: #33506A;
+        --steel-dark: #223749;
+        --accent: #E06327;
+        --accent-ink: #FFFFFF;
+
+        --stock: #3E8B5C;
+        --uso: #2F6EA3;
+        --pendiente: #7857B0;
+        --afilar: #C4841F;
+        --baja: #AE3A2F;
+
+        --stock-bg: #E7F3EC;
+        --uso-bg: #E9F1F8;
+        --pendiente-bg: #F0EAF8;
+        --afilar-bg: #FAF0E1;
+        --baja-bg: #F8E9E7;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+        margin: 0;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, .display {
+        font-family: 'Fjalla One', sans-serif;
+        font-weight: 400;
+        letter-spacing: 0.3px;
+    }
+
+    button { font-family: inherit; }
+    button:focus-visible, input:focus-visible, select:focus-visible {
+        outline: 2px solid var(--steel); outline-offset: 2px;
+    }
+
+    .container { max-width: 1280px; margin: 0 auto; padding: 0 24px 60px; }
+
+    /* ---------- Topbar ---------- */
+    .topbar {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 20px 24px; border-bottom: 3px solid var(--ink);
+        margin-bottom: 0; flex-wrap: wrap; gap: 14px;
+        background: var(--surface);
+    }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand svg { flex-shrink: 0; }
+    .brand-text h1 { font-size: 1.7em; margin: 0; color: var(--ink); line-height: 1; }
+    .brand-text span { font-size: 0.8em; color: var(--ink-soft); letter-spacing: 0.5px; }
+
+    .quien { display: flex; align-items: center; gap: 8px; }
+    .quien label { font-size: 0.78em; color: var(--ink-soft); font-weight: 600; }
+    .quien input {
+        border: none; border-bottom: 2px solid var(--line); background: transparent;
+        font-family: inherit; font-weight: 600; font-size: 0.95em; color: var(--ink);
+        padding: 4px 2px; width: 130px;
+    }
+    .quien input:focus-visible { outline: none; border-bottom-color: var(--steel); }
+
+    /* ---------- App tabs (Metal Duro / Diamante) ---------- */
+    .app-tabs {
+        display: flex; background: var(--steel-dark); padding: 0 24px;
+    }
+    .app-tab {
+        border: none; background: transparent; color: #AEB9C2; padding: 14px 22px;
+        font-family: 'Fjalla One', sans-serif; font-size: 1em; letter-spacing: 0.4px;
+        cursor: pointer; border-bottom: 3px solid transparent;
+    }
+    .app-tab.active { color: white; border-bottom-color: var(--accent); }
+    .app-tab:hover:not(.active) { color: white; }
+
+    .tab-panel { display: none; padding-top: 24px; }
+    .tab-panel.active { display: block; }
+
+    /* ---------- Stat ledger ---------- */
+    .stat-ledger {
+        display: grid; grid-template-columns: repeat(5, 1fr);
+        background: var(--surface); border: 1px solid var(--line);
+        margin-bottom: 20px;
+    }
+    .stat-tile {
+        padding: 16px 14px; border-right: 1px solid var(--line);
+        cursor: pointer; text-align: left; position: relative;
+        border-bottom: 4px solid transparent; transition: background 0.15s;
+    }
+    .stat-tile:last-child { border-right: none; }
+    .stat-tile:hover { background: #FAF9F5; }
+    .stat-tile.active { background: #FAF9F5; }
+    .stat-tile.stock { border-bottom-color: var(--stock); }
+    .stat-tile.uso { border-bottom-color: var(--uso); }
+    .stat-tile.pendiente { border-bottom-color: var(--pendiente); }
+    .stat-tile.afilar { border-bottom-color: var(--afilar); }
+    .stat-tile.baja { border-bottom-color: var(--baja); }
+    .stat-value { font-family: 'Fjalla One', sans-serif; font-size: 2.1em; display: block; line-height: 1; }
+    .stat-label { font-size: 0.76em; color: var(--ink-soft); font-weight: 600; margin-top: 6px; display: block; }
+
+    @media (max-width: 720px) {
+        .stat-ledger { grid-template-columns: repeat(2, 1fr); }
+        .stat-tile { border-bottom-width: 4px; border-right: 1px solid var(--line); }
+        .stat-tile:nth-child(2n) { border-right: none; }
+    }
+
+    /* ---------- Diameter / tipo selector ---------- */
+    .diam-strip {
+        display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap;
+        border-bottom: 1px solid var(--line); padding-bottom: 14px;
+    }
+    .diam-btn {
+        padding: 8px 16px; border: 1px solid var(--line); background: var(--surface);
+        cursor: pointer; font-weight: 600; font-size: 0.9em; color: var(--ink-soft);
+        border-radius: 2px;
+    }
+    .diam-btn.active { background: var(--steel); color: white; border-color: var(--steel); }
+
+    .select-tipo {
+        padding: 10px 12px; border: 1px solid var(--line); font-size: 0.92em; font-family: inherit;
+        border-radius: 2px; background: var(--surface); min-width: 220px;
+    }
+
+    /* ---------- Controls ---------- */
+    .controls-row { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; align-items: stretch; }
+    .panel-busqueda {
+        flex: 1; min-width: 220px; background: var(--surface); border: 1px solid var(--line);
+        padding: 10px 14px; display: flex; align-items: center; gap: 10px;
+    }
+    .panel-busqueda svg { flex-shrink: 0; color: var(--ink-soft); }
+    .panel-busqueda input { border: none; flex: 1; font-size: 0.95em; font-family: inherit; background: transparent; }
+    .panel-busqueda input:focus-visible { outline: none; }
+
+    .btn-csv {
+        border: 1px solid var(--line); background: var(--surface); color: var(--ink-soft);
+        padding: 10px 16px; font-weight: 600; font-size: 0.85em; cursor: pointer; white-space: nowrap;
+    }
+    .btn-csv:hover { border-color: var(--steel); color: var(--steel); }
+
+    .panel-registro {
+        flex: 1.6; min-width: 320px; background: var(--surface); border: 1px solid var(--line);
+        padding: 10px 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .panel-registro input[type="text"], .panel-registro select {
+        padding: 10px 12px; border: 1px solid var(--line); font-size: 0.92em; font-family: inherit;
+        border-radius: 2px;
+    }
+    .panel-registro input[type="text"] { flex: 1; min-width: 140px; }
+
+    #regDiamLabel, .maquina-label {
+        font-weight: 700; color: var(--steel); background: #EEF2F5; padding: 3px 9px;
+        border-radius: 2px; font-family: 'Fjalla One', sans-serif; font-size: 0.85em;
+    }
+    .maquina-label { white-space: nowrap; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+
+    .btn-registrar {
+        padding: 11px 18px; background: var(--accent); color: var(--accent-ink); border: none;
+        cursor: pointer; font-weight: 700; font-size: 0.9em; white-space: nowrap; border-radius: 2px;
+    }
+    .btn-registrar:hover { background: #C8551E; }
+    .btn-registrar[disabled] { opacity: 0.45; cursor: not-allowed; }
+
+    /* ---------- Selección múltiple / lote ---------- */
+    .btn-lote {
+        border: 1px solid var(--line); background: var(--surface); color: var(--ink-soft);
+        padding: 10px 16px; font-weight: 600; font-size: 0.85em; cursor: pointer; white-space: nowrap;
+    }
+    .btn-lote.active { background: var(--steel); color: white; border-color: var(--steel); }
+    .col-check { width: 34px; }
+    .chk-fila { width: 18px; height: 18px; cursor: pointer; accent-color: var(--steel); display: none; }
+    .modo-seleccion .chk-fila { display: inline-block; }
+
+    #bulkBar {
+        display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 250;
+        background: var(--ink); color: white; padding: 14px 20px;
+        align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+        box-shadow: 0 -4px 14px rgba(0,0,0,0.18);
+        padding-bottom: calc(14px + env(safe-area-inset-bottom));
+    }
+    #bulkBar.show { display: flex; }
+    body.modo-lote-activo .container { padding-bottom: 100px; }
+    #bulkBar .bulk-count { font-weight: 700; font-family: 'Fjalla One', sans-serif; letter-spacing: 0.3px; font-size: 1.05em; }
+    #bulkBar .bulk-hint { color: #B9C0C8; font-size: 0.82em; }
+    #bulkBar .bulk-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+    .btn-lote-accion {
+        padding: 10px 16px; border: none; border-radius: 3px; font-weight: 700; cursor: pointer;
+        font-size: 0.88em; color: white;
+    }
+    .btn-lote-baja { background: var(--baja); }
+    .btn-lote-cancelar { background: transparent; color: white; border: 1px solid #4A5661; }
+
+    /* ---------- Table ---------- */
+    .panel-tabla { background: var(--surface); border: 1px solid var(--line); overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 720px; }
+    th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--line); font-size: 0.92em; }
+    th {
+        background: #FAF9F5; color: var(--ink-soft); font-size: 0.72em; text-transform: uppercase;
+        letter-spacing: 0.6px; font-weight: 700; border-bottom: 2px solid var(--line);
+    }
+    tbody tr { border-left: 4px solid transparent; }
+    tbody tr.row-stock { border-left-color: var(--stock); }
+    tbody tr.row-uso { border-left-color: var(--uso); }
+    tbody tr.row-pendiente { border-left-color: var(--pendiente); }
+    tbody tr.row-afilar { border-left-color: var(--afilar); }
+    tbody tr.row-baja { border-left-color: var(--baja); opacity: 0.7; }
+    tbody tr:hover { background: #FAF9F5; }
+    td code { background: #F0EEE7; padding: 2px 7px; border-radius: 2px; font-size: 0.95em; }
+
+    .tag {
+        display: inline-block; padding: 3px 9px; font-size: 0.75em; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.3px; border-radius: 2px;
+    }
+    .tag-stock { background: var(--stock-bg); color: var(--stock); }
+    .tag-uso { background: var(--uso-bg); color: var(--uso); }
+    .tag-pendiente { background: var(--pendiente-bg); color: var(--pendiente); }
+    .tag-afilar { background: var(--afilar-bg); color: var(--afilar); }
+    .tag-baja { background: var(--baja-bg); color: var(--baja); }
+
+    .btn-hist {
+        background: transparent; color: var(--steel); border: 1px solid var(--line); padding: 6px 11px;
+        cursor: pointer; font-size: 0.78em; font-weight: 600; border-radius: 2px; white-space: nowrap;
+    }
+    .btn-hist:hover { border-color: var(--steel); }
+    .btn-sm {
+        padding: 6px 11px; border: none; border-radius: 2px; color: white; cursor: pointer;
+        font-size: 0.78em; margin-right: 4px; font-weight: 700;
+    }
+    .acciones-cell { display: flex; flex-wrap: wrap; gap: 4px; }
+
+    .empty-state { padding: 60px 20px; text-align: center; color: var(--ink-soft); }
+    .empty-state .display { font-size: 1.3em; color: var(--ink); margin-bottom: 6px; }
+
+    /* ---------- Modals ---------- */
+    .modal {
+        display: none; position: fixed; z-index: 100; inset: 0;
+        background: rgba(28, 37, 48, 0.55); backdrop-filter: blur(2px);
+        align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-content {
+        background: var(--surface); padding: 28px; width: 100%; max-width: 560px;
+        max-height: 82vh; overflow-y: auto; position: relative; border-radius: 4px;
+    }
+    .modal-content.small { max-width: 420px; }
+    .close-btn {
+        position: absolute; right: 18px; top: 14px; cursor: pointer; font-size: 26px;
+        color: var(--ink-soft); line-height: 1; background: none; border: none;
+    }
+    .historial-item {
+        padding: 12px 14px; border-left: 3px solid var(--steel); margin-bottom: 8px;
+        background: #FAF9F5; border-radius: 0 3px 3px 0;
+    }
+    .historial-item small { color: var(--ink-soft); }
+
+    .notas-box textarea {
+        width: 100%; min-height: 70px; font-family: inherit; padding: 10px; border: 1px solid var(--line);
+        border-radius: 2px; font-size: 0.9em; resize: vertical;
+    }
+    .btn-guardar-nota {
+        margin-top: 8px; padding: 8px 16px; background: var(--steel); color: white; border: none;
+        border-radius: 2px; cursor: pointer; font-weight: 600; font-size: 0.85em;
+    }
+
+    .confirm-body { margin: 14px 0 22px; color: var(--ink-soft); font-size: 0.95em; }
+    .confirm-actions { display: flex; gap: 10px; justify-content: flex-end; }
+    .btn-cancelar { padding: 9px 16px; background: #EDEBE4; color: var(--ink); border: none; border-radius: 2px; cursor: pointer; font-weight: 600; }
+    .btn-confirmar { padding: 9px 16px; background: var(--baja); color: white; border: none; border-radius: 2px; cursor: pointer; font-weight: 600; }
+
+    /* ---------- Toasts ---------- */
+    #toast-container {
+        position: fixed; bottom: 20px; right: 20px; z-index: 300;
+        display: flex; flex-direction: column; gap: 8px; max-width: 320px;
+    }
+    .toast {
+        background: var(--ink); color: white; padding: 12px 16px; border-radius: 3px;
+        font-size: 0.88em; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+        border-left: 4px solid var(--stock); animation: toast-in 0.2s ease;
+    }
+    .toast.error { border-left-color: var(--baja); }
+    .toast.warn { border-left-color: var(--afilar); }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media (max-width: 680px) {
+        .container { padding: 0 14px 100px; }
+        .topbar { padding: 14px 16px; }
+        .brand-text h1 { font-size: 1.35em; }
+        .quien { width: 100%; }
+        .quien input { flex: 1; width: auto; }
+        .app-tabs { padding: 0 8px; overflow-x: auto; }
+        .app-tab { padding: 12px 16px; font-size: 0.92em; white-space: nowrap; }
+
+        .diam-strip { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; }
+        .diam-btn { flex-shrink: 0; scroll-snap-align: start; padding: 10px 16px; }
+
+        .controls-row { gap: 10px; }
+        .panel-busqueda, .btn-csv, .btn-lote, .panel-registro, .select-tipo { width: 100%; min-width: 0; }
+        .panel-registro input[type="text"], .panel-registro select, .btn-registrar { width: 100%; }
+        .panel-busqueda input, .panel-registro input, .panel-registro select, .select-tipo { font-size: 16px; padding: 12px; }
+        .btn-registrar { padding: 13px; }
+        .maquina-label { max-width: none; white-space: normal; }
+
+        /* Tabla -> tarjetas apiladas */
+        .panel-tabla { border: none; background: transparent; overflow: visible; }
+        table { min-width: 0; }
+        thead { display: none; }
+        tbody { display: block; }
+        tr {
+            display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px;
+            background: var(--surface); border: 1px solid var(--line); border-left-width: 4px;
+            border-radius: 4px; padding: 12px 14px; margin-bottom: 10px; position: relative;
         }
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
-        
-        /* Login Styles */
-        #login-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--dark); display: flex; align-items: center; justify-content: center; z-index: 2000;
+        td { display: block; border-bottom: none; padding: 3px 0; font-size: 0.9em; }
+        td[data-label]::before {
+            content: attr(data-label); display: block; font-size: 0.68em; font-weight: 700;
+            color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1px;
         }
-        .login-box {
-            background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            text-align: center; width: 300px;
-        }
-        .login-box input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        .login-box button { width: 100%; padding: 10px; background: var(--uso); color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-
-        /* Main UI */
-        #main-content { display: none; }
-        .header-app { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        
-        .container { max-width: 1250px; margin: auto; position: relative; }
-        
-        /* Dashboard */
-        /* 2. Cambiamos las columnas de la grilla de 5 a 6 para que quepa la nueva tarjeta */
-        .stats-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 15px; margin-bottom: 25px; }
-        .stat-card { background: white; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-top: 6px solid #ccc; cursor: pointer; transition: 0.2s; }
-        .stat-card.active { transform: scale(1.02); border-bottom: 4px solid var(--dark); background: #fffdf5; }
-        .stat-card.stock { border-top-color: var(--stock); }
-        .stat-card.uso { border-top-color: var(--uso); }
-        /* 3. Estilo del borde para la tarjeta desafiladas */
-        .stat-card.desafiladas { border-top-color: var(--desafiladas); }
-        .stat-card.pendiente { border-top-color: var(--pendiente); }
-        .stat-card.afilar { border-top-color: var(--afilar); }
-        .stat-card.baja { border-top-color: var(--baja); }
-        .stat-value { font-size: 2.5em; font-weight: bold; display: block; }
-        .stat-label { font-size: 0.9em; color: #666; font-weight: bold; }
-
-        .nav-tabs { display: flex; justify-content: center; gap: 8px; margin-bottom: 25px; flex-wrap: wrap; }
-        .tab-btn { padding: 10px 18px; border: none; border-radius: 6px; background: white; cursor: pointer; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .tab-btn.active { background: var(--uso); color: white; }
-
-        .controls-row { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
-        .panel-busqueda { flex: 1.5; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 10px; }
-        
-        .panel-registro { flex: 2; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-        
-        input[type="text"], select { padding: 12px; border-radius: 6px; border: 1px solid #ddd; font-size: 1em; }
-        input[type="text"] { flex: 1; }
-
-        .panel-tabla { background: rgb(113, 186, 255); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 600px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background: #f8f9fa; color: #333; font-size: 0.8em; text-transform: uppercase; }
-        
-        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75em; font-weight: bold; text-transform: uppercase; }
-        .badge-stock { background: #eafaf1; color: var(--stock); }
-        .badge-uso { background: #ebf5fb; color: var(--uso); }
-        /* 4. Estilo de la etiqueta para la tabla */
-        .badge-desafiladas { background: #fae5d3; color: var(--desafiladas); }
-        .badge-pendiente { background: #f4ecf7; color: var(--pendiente); }
-        .badge-afilar { background: #fef5e7; color: var(--afilar); }
-        .badge-baja { background: #fdedec; color: var(--baja); }
-
-        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(3px); }
-        .modal-content { background: white; margin: 5% auto; padding: 30px; border-radius: 15px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto; position: relative; }
-        .close-btn { position: absolute; right: 20px; top: 15px; cursor: pointer; font-size: 28px; color: #888; }
-        .historial-item { padding: 12px; border-left: 4px solid var(--uso); margin-bottom: 10px; background: #f9f9f9; border-radius: 0 8px 8px 0; }
-        
-        .btn-hist { background: var(--dark); color: white; border: none; padding: 7px 12px; border-radius: 5px; cursor: pointer; font-size: 0.75em; }
-        .btn-sm { padding: 7px 12px; border: none; border-radius: 5px; color: white; cursor: pointer; font-size: 0.75em; margin-right: 3px; font-weight: bold; }
-        .btn-logout { background: #95a5a6; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
-        
-        #regDiamLabel { font-weight: bold; color: var(--uso); background: #eee; padding: 2px 6px; border-radius: 4px; }
-    </style>
+        td.td-check { position: absolute; top: 12px; right: 12px; padding: 0; }
+        td.td-check::before { content: none; }
+        td.td-diam { width: 32%; }
+        td.td-tipo { width: 60%; }
+        td.td-maquina { width: 100%; }
+        td.td-cod { width: 40%; }
+        td.td-estado { width: 26%; }
+        td.td-afilados { width: 32%; }
+        td.td-hist { width: 40%; }
+        td.td-acciones { width: 100%; margin-top: 6px; }
+        .acciones-cell .btn-sm { padding: 9px 12px; font-size: 0.82em; }
+        .chk-fila { width: 22px; height: 22px; }
+    }
+</style>
 </head>
 <body>
 
-    <div id="login-overlay">
-        <div class="login-box">
-            <h2>Acceso al Sistema</h2>
-            <input type="text" id="user" placeholder="Usuario">
-            <input type="password" id="pass" placeholder="Contraseña">
-            <button onclick="login()">Entrar</button>
-            <p id="login-error" style="color:red; font-size:0.8em; margin-top:10px; display:none;">Credenciales incorrectas</p>
+<div class="topbar">
+    <div class="brand">
+        <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
+            <circle cx="17" cy="17" r="15" stroke="#1C2530" stroke-width="2"/>
+            <circle cx="17" cy="17" r="4" fill="#1C2530"/>
+            <g stroke="#1C2530" stroke-width="2">
+                <line x1="17" y1="2" x2="17" y2="8"/>
+                <line x1="17" y1="26" x2="17" y2="32"/>
+                <line x1="2" y1="17" x2="8" y2="17"/>
+                <line x1="26" y1="17" x2="32" y2="17"/>
+                <line x1="6.5" y1="6.5" x2="10.5" y2="10.5"/>
+                <line x1="23.5" y1="23.5" x2="27.5" y2="27.5"/>
+                <line x1="27.5" y1="6.5" x2="23.5" y2="10.5"/>
+                <line x1="10.5" y1="23.5" x2="6.5" y2="27.5"/>
+            </g>
+        </svg>
+        <div class="brand-text">
+            <h1>Panel de Herramientas</h1>
+            <span>Metal duro y diamante — stock, uso y afilado</span>
         </div>
     </div>
+    <div class="quien">
+        <label for="inputUsuario">Registrando como</label>
+        <input type="text" id="inputUsuario" placeholder="Tu nombre" maxlength="24">
+    </div>
+</div>
 
-    <div id="main-content" class="container">
-        <div class="header-app">
-            <img src="logo1.jpg" style="max-width: 80px;" onerror="this.style.display='none'">
-            <div>
-                <span id="user-display" style="font-weight: bold; margin-right: 15px;"></span>
-                <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
-            </div>
-        </div>
+<div class="app-tabs">
+    <button class="app-tab active" id="tabBtnMetal" onclick="cambiarTab('metal')">🔧 Metal Duro</button>
+    <button class="app-tab" id="tabBtnDia" onclick="cambiarTab('dia')">💎 Diamante</button>
+</div>
 
-        <h1 style="text-align: center; color: var(--dark); margin-bottom: 30px;">Seguimiento de Sierras Circular</h1>
+<div class="container">
 
-        <div class="stats-grid">
-            <div class="stat-card stock" onclick="filtrarEstado('stock')" id="card-stock">
+    <!-- ================= PANEL METAL DURO ================= -->
+    <div id="panelMetal" class="tab-panel active">
+
+        <div class="stat-ledger">
+            <div class="stat-tile stock" onclick="filtrarEstado('metal','stock')" id="card-stock">
                 <span class="stat-value" id="total-stock">0</span>
                 <span class="stat-label">Stock / Listas</span>
             </div>
-            <div class="stat-card uso" onclick="filtrarEstado('uso')" id="card-uso">
+            <div class="stat-tile uso" onclick="filtrarEstado('metal','uso')" id="card-uso">
                 <span class="stat-value" id="total-uso">0</span>
-                <span class="stat-label">En Máquina</span>
+                <span class="stat-label">En máquina</span>
             </div>
-            <div class="stat-card desafiladas" onclick="filtrarEstado('desafiladas')" id="card-desafiladas">
-                <span class="stat-value" id="total-desafiladas">0</span>
-                <span class="stat-label">Desafiladas</span>
-            </div>
-            <div class="stat-card pendiente" onclick="filtrarEstado('pendiente')" id="card-pendiente">
+            <div class="stat-tile pendiente" onclick="filtrarEstado('metal','pendiente')" id="card-pendiente">
                 <span class="stat-value" id="total-pendiente">0</span>
-                <span class="stat-label">Por Afilar</span>
+                <span class="stat-label">Por afilar</span>
             </div>
-            <div class="stat-card afilar" onclick="filtrarEstado('afilar')" id="card-afilar">
+            <div class="stat-tile afilar" onclick="filtrarEstado('metal','afilar')" id="card-afilar">
                 <span class="stat-value" id="total-afilar">0</span>
-                <span class="stat-label">En Afilado</span>
+                <span class="stat-label">En afilado</span>
             </div>
-            <div class="stat-card baja" onclick="filtrarEstado('baja')" id="card-baja">
+            <div class="stat-tile baja" onclick="filtrarEstado('metal','baja')" id="card-baja">
                 <span class="stat-value" id="total-baja">0</span>
-                <span class="stat-label">Dadas de Baja</span>
+                <span class="stat-label">Dadas de baja</span>
             </div>
         </div>
 
-        <div class="nav-tabs" id="tabsDiametros"></div>
+        <div class="diam-strip" id="tabsDiametros"></div>
 
         <div class="controls-row">
             <div class="panel-busqueda">
-                <span>🔍</span>
-                <input type="text" id="inputBuscar" placeholder="Buscar código..." onkeyup="render()">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.6"/><line x1="11.2" y1="11.2" x2="15" y2="15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                <input type="text" id="inputBuscar" placeholder="Buscar código..." onkeyup="renderMetal()">
             </div>
-            
-            <div class="panel-registro" id="panelRegistro" style="display: none;">
-                <input type="text" id="nuevoCodigo" placeholder="Ingrese Código (Ejem: 2045)">
+            <button class="btn-csv" onclick="exportarCSV('metal')">⬇ Exportar CSV</button>
+            <button class="btn-lote" id="btnModoLote" onclick="toggleModoLote('metal')">☐ Seleccionar varias</button>
+
+            <div class="panel-registro">
+                <input type="text" id="nuevoCodigo" placeholder="Código (ej: 2045)">
                 <select id="nuevoEstado">
                     <option value="stock">Cargar en Stock</option>
                     <option value="uso">Cargar en Máquina</option>
-                    <option value="desafiladas">Cargar en "Desafiladas"</option>
                     <option value="pendiente">Cargar en "Por Afilar"</option>
                     <option value="afilar">Cargar en "En Afilado"</option>
                 </select>
-                <button id="btnRegistrar" onclick="agregarSierra()" style="padding: 12px 20px; background: var(--stock); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
-                    + Registrar Ø <span id="regDiam">---</span>
+                <button id="btnRegistrar" class="btn-registrar" onclick="agregarSierra()" disabled>
+                    + Registrar Ø <span id="regDiamLabel">---</span>
                 </button>
             </div>
         </div>
@@ -165,220 +443,680 @@
             <table id="tablaSierras">
                 <thead>
                     <tr>
+                        <th class="col-check"><input type="checkbox" class="chk-fila" id="chkTodos" onchange="toggleSeleccionarTodos('metal', this.checked)"></th>
                         <th>Diámetro</th>
                         <th>Código</th>
-                        <th>Estado Actual</th>
+                        <th>Estado actual</th>
                         <th>Afilados</th>
-                        <th>Hoja de Vida</th>
-                        <th class="col-acciones">Acciones</th>
+                        <th>Hoja de vida</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
             </table>
+            <div class="empty-state" id="emptyState" style="display:none;">
+                <div class="display">Sin resultados</div>
+                <div>No hay sierras que coincidan con el filtro actual.</div>
+            </div>
         </div>
     </div>
 
-    <div id="modalHistorial" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" onclick="cerrarModal()">&times;</span>
-            <h2 id="modalTitulo" style="margin-top: 0; color: var(--dark);">Historial</h2>
-            <div id="listaEventos"></div>
+    <!-- ================= PANEL DIAMANTE ================= -->
+    <div id="panelDia" class="tab-panel">
+
+        <div class="stat-ledger">
+            <div class="stat-tile stock" onclick="filtrarEstado('dia','nuevo')" id="cardDia-nuevo">
+                <span class="stat-value" id="totalDia-nuevo">0</span>
+                <span class="stat-label">Nuevo</span>
+            </div>
+            <div class="stat-tile uso" onclick="filtrarEstado('dia','usado')" id="cardDia-usado">
+                <span class="stat-value" id="totalDia-usado">0</span>
+                <span class="stat-label">Usado</span>
+            </div>
+            <div class="stat-tile afilar" onclick="filtrarEstado('dia','pocavida')" id="cardDia-pocavida">
+                <span class="stat-value" id="totalDia-pocavida">0</span>
+                <span class="stat-label">Poca vida útil</span>
+            </div>
+            <div class="stat-tile pendiente" onclick="filtrarEstado('dia','afilando')" id="cardDia-afilando">
+                <span class="stat-value" id="totalDia-afilando">0</span>
+                <span class="stat-label">En afilado</span>
+            </div>
+            <div class="stat-tile baja" onclick="filtrarEstado('dia','baja')" id="cardDia-baja">
+                <span class="stat-value" id="totalDia-baja">0</span>
+                <span class="stat-label">Dadas de baja</span>
+            </div>
+        </div>
+
+        <div class="controls-row" style="margin-bottom:14px;">
+            <select class="select-tipo" id="selectTipoDia"></select>
+        </div>
+
+        <div class="controls-row">
+            <div class="panel-busqueda">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.6"/><line x1="11.2" y1="11.2" x2="15" y2="15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                <input type="text" id="inputBuscarDia" placeholder="Buscar código..." onkeyup="renderDia()">
+            </div>
+            <button class="btn-csv" onclick="exportarCSV('dia')">⬇ Exportar CSV</button>
+            <button class="btn-lote" id="btnModoLoteDia" onclick="toggleModoLote('dia')">☐ Seleccionar varias</button>
+
+            <div class="panel-registro">
+                <select id="nuevoTipoDia"></select>
+                <span class="maquina-label" id="maquinaDiaLabel">Elegí un tipo</span>
+                <input type="text" id="nuevoCodigoDia" placeholder="Código">
+                <select id="nuevoEstadoDia">
+                    <option value="nuevo">Cargar como Nuevo</option>
+                    <option value="usado">Cargar como Usado</option>
+                    <option value="pocavida">Cargar como Poca vida útil</option>
+                </select>
+                <button id="btnRegistrarDia" class="btn-registrar" onclick="agregarPiezaDia()" disabled>
+                    + Registrar
+                </button>
+            </div>
+        </div>
+
+        <div class="panel-tabla">
+            <table id="tablaDia">
+                <thead>
+                    <tr>
+                        <th class="col-check"><input type="checkbox" class="chk-fila" id="chkTodosDia" onchange="toggleSeleccionarTodos('dia', this.checked)"></th>
+                        <th>Tipo</th>
+                        <th>Máquina</th>
+                        <th>Código</th>
+                        <th>Estado actual</th>
+                        <th>Veces afilada</th>
+                        <th>Hoja de vida</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <div class="empty-state" id="emptyStateDia" style="display:none;">
+                <div class="display">Sin resultados</div>
+                <div>No hay piezas que coincidan con el filtro actual.</div>
+            </div>
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+</div>
 
-    <script>
-        // --- CONFIGURACIÓN FIREBASE ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyB1ivVZmMy29zJQbi_5m5mv151jn2k2xPQ", 
-            authDomain: "sierras-trazabilidad.firebaseapp.com",
-            projectId: "sierras-trazabilidad",
-            storageBucket: "sierras-trazabilidad.firebasestorage.app",
-            messagingSenderId: "926057948507",
-            appId: "1:926057948507:web:4c8d13ec5a5d39de8be67e"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const dbRef = firebase.database().ref();
+<!-- ============ MODALES COMPARTIDOS ============ -->
+<div id="modalHistorial" class="modal">
+    <div class="modal-content">
+        <button class="close-btn" onclick="cerrarModal('modalHistorial')">&times;</button>
+        <h2 id="modalTitulo" style="margin-top: 0;">Historial</h2>
+        <div id="listaEventos"></div>
+        <div class="notas-box">
+            <label style="font-size:0.8em; font-weight:700; color:var(--ink-soft);">NOTAS</label>
+            <textarea id="notasTexto" placeholder="Observaciones sobre esta pieza..."></textarea>
+            <button class="btn-guardar-nota" onclick="guardarNotaGenerico()">Guardar nota</button>
+        </div>
+    </div>
+</div>
 
-        // --- SISTEMA DE ROLES ---
-        let usuarioActual = null;
-        const USUARIOS = {
-            "PEREZA": { pass: "A12PZ", rol: "supervisor", nombre: "Supervisor" },
-            "MOSCATTE.J": { pass: "MOSCA", rol: "supervisor", nombre: "Supervisor" },
-            "operario": { pass: "1234", rol: "operario", nombre: "Operario Taller" }
-        };
+<div id="modalConfirm" class="modal">
+    <div class="modal-content small">
+        <button class="close-btn" onclick="cerrarModal('modalConfirm')">&times;</button>
+        <h2 style="margin-top:0;" id="confirmTitulo">Confirmar</h2>
+        <p class="confirm-body" id="confirmBody"></p>
+        <div class="confirm-actions">
+            <button class="btn-cancelar" onclick="cerrarModal('modalConfirm')">Cancelar</button>
+            <button class="btn-confirmar" id="btnConfirmarAccion">Confirmar</button>
+        </div>
+    </div>
+</div>
 
-        function login() {
-            const u = document.getElementById('user').value;
-            const p = document.getElementById('pass').value;
-            if(USUARIOS[u] && USUARIOS[u].pass === p) {
-                usuarioActual = USUARIOS[u];
-                document.getElementById('login-overlay').style.display = 'none';
-                document.getElementById('main-content').style.display = 'block';
-                document.getElementById('user-display').innerText = `Sesión: ${usuarioActual.nombre}`;
-                document.getElementById('panelRegistro').style.display = usuarioActual.rol === 'supervisor' ? 'flex' : 'none';
-                render();
-            } else {
-                document.getElementById('login-error').style.display = 'block';
-            }
+<div id="bulkBar">
+    <div>
+        <div class="bulk-count" id="bulkCount">0 seleccionadas</div>
+        <div class="bulk-hint" id="bulkHint"></div>
+    </div>
+    <div class="bulk-actions" id="bulkActions"></div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+
+<script>
+    // --- CONFIGURACIÓN FIREBASE ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyB1ivVZmMy29zJQbi_5m5mv151jn2k2xPQ",
+        authDomain: "sierras-trazabilidad.firebaseapp.com",
+        projectId: "sierras-trazabilidad",
+        storageBucket: "sierras-trazabilidad.firebasestorage.app",
+        messagingSenderId: "926057948507",
+        appId: "1:926057948507:web:4c8d13ec5a5d39de8be67e"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const dbRef = firebase.database().ref();             // metal duro: sigue en la raíz (datos existentes)
+    const dbRefDia = firebase.database().ref('diamante'); // diamante: nodo aparte, no pisa nada de metal duro
+
+    // --- USUARIO (solo identificación para el historial, sin login) ---
+    const inputUsuario = document.getElementById('inputUsuario');
+    inputUsuario.value = localStorage.getItem('sierras_usuario') || '';
+    inputUsuario.addEventListener('change', () => localStorage.setItem('sierras_usuario', inputUsuario.value.trim()));
+    function nombreActual() { return inputUsuario.value.trim() || 'Sin identificar'; }
+
+    // --- TOASTS ---
+    function toast(msg, tipo) {
+        const el = document.createElement('div');
+        el.className = 'toast' + (tipo ? ' ' + tipo : '');
+        el.textContent = msg;
+        document.getElementById('toast-container').appendChild(el);
+        setTimeout(() => el.remove(), 3200);
+    }
+
+    // --- CATÁLOGO FIJO DE HERRAMIENTAS DE DIAMANTE ---
+    // Editá esta lista para agregar/quitar tipos o cambiar la máquina asociada.
+    const CATALOGO_DIA = [
+        { id: 's430',         nombre: 'Sierra D430 4,8',            maquina: 'S2 y S3 (se usa 3)' },
+        { id: 's520',         nombre: 'Sierra D520 4,8',            maquina: 'S1 (se usa 1)' },
+        { id: 'ins200g',      nombre: 'Insisor D200 4,8 (Gabbiani)', maquina: 'S2, S3 y S4 (se usa 4)' },
+        { id: 'ins200s',      nombre: 'Insisor D200 4,8 (Selco)',   maquina: 'S1 (se usa 1)' },
+        { id: 'trit215z36',   nombre: 'Triturador D215 z36',        maquina: 'L1, L2 y L4 (se usa 4x4 puestos)' },
+        { id: 'trit215z42',   nombre: 'Triturador D215 z42',        maquina: 'L5 y L6 (se usa 3x4 puestos)' },
+        { id: 'trit250',      nombre: 'Triturador D250',            maquina: 'L6 (se usa 1x4 puestos)' },
+        { id: 'antiastilla',  nombre: 'Antiastilla',                maquina: 'L1, L2, L3, L4, L5 y L6 (se usa 6x2 puestos)' },
+        { id: 'fresa180l4',   nombre: 'Fresa D180 L4',              maquina: 'L4 (se usa 4 puestas)' },
+        { id: 'fresa140l3',   nombre: 'Fresa D140 L3',              maquina: 'L3 y L2 (se usa 4 puestas)' },
+        { id: 'fresa140l2',   nombre: 'Fresa D140 L2',              maquina: 'L2 (se usa 2 puestas)' },
+        { id: 'fresa100recto',nombre: 'Fresa D100 recto',           maquina: 'RECTO (se usa 2)' }
+    ];
+
+    // --- CONFIGURACIÓN POR CONTEXTO (metal duro vs diamante) ---
+    let dbMetal = {};
+    let dbDia = {};
+    const diametros = [520, 430, 380, 350, 200];
+
+    const CTX = {
+        metal: {
+            estados: ['stock', 'uso', 'pendiente', 'afilar', 'baja'],
+            grupos: () => diametros,
+            getArr: (g) => dbMetal[g] || (dbMetal[g] = []),
+            guardarGrupo: (g) => dbRef.child(String(g)).set(dbMetal[g] || []),
+            siguiente: { stock: 'uso', uso: 'pendiente', pendiente: 'afilar', afilar: 'stock' },
+            etiqueta: { stock: 'Poner en máquina', uso: 'Retirar', pendiente: 'Enviar a afilar', afilar: 'Recibir' },
+            clase: { stock: 'stock', uso: 'uso', pendiente: 'pendiente', afilar: 'afilar', baja: 'baja' },
+            textoEstado: { stock: 'stock', uso: 'uso', pendiente: 'pendiente', afilar: 'afilar', baja: 'baja' },
+            contadorCampo: 'afilados',
+            contadorOrigen: 'afilar',
+            nombreGrupo: (g) => `${g}mm`,
+        },
+        dia: {
+            estados: ['nuevo', 'usado', 'pocavida', 'afilando', 'baja'],
+            grupos: () => CATALOGO_DIA.map(t => t.id),
+            getArr: (g) => dbDia[g] || (dbDia[g] = []),
+            guardarGrupo: (g) => dbRefDia.child(g).set(dbDia[g] || []),
+            siguiente: { nuevo: 'usado', usado: 'pocavida', pocavida: 'afilando', afilando: 'usado' },
+            etiqueta: { nuevo: 'Poner en uso', usado: 'Marcar poca vida útil', pocavida: 'Enviar a afilar', afilando: 'Recibir afilada' },
+            clase: { nuevo: 'stock', usado: 'uso', pocavida: 'afilar', afilando: 'pendiente', baja: 'baja' },
+            textoEstado: { nuevo: 'nuevo', usado: 'usado', pocavida: 'poca vida útil', afilando: 'en afilado', baja: 'baja' },
+            contadorCampo: 'veces',
+            contadorOrigen: 'afilando',
+            nombreGrupo: (g) => (CATALOGO_DIA.find(t => t.id === g) || {}).nombre || g,
         }
+    };
 
-        function logout() {
-            usuarioActual = null;
-            document.getElementById('login-overlay').style.display = 'flex';
-            document.getElementById('main-content').style.display = 'none';
-            document.getElementById('user').value = "";
-            document.getElementById('pass').value = "";
-        }
+    let tabActual = 'metal';
+    let eActual = { metal: null, dia: null };
+    let filtroGrupo = { metal: null, dia: null };
+    let modoLote = { metal: false, dia: false };
+    let seleccion = { metal: new Set(), dia: new Set() };
 
-        // --- LÓGICA DE NEGOCIO ---
-        const diametros = [520, 430, 380, 350, 200];
-        let dActual = null;
-        let eActual = null;
-        let db = {};
+    dbRef.on('value', (snapshot) => {
+        dbMetal = snapshot.val() || {};
+        diametros.forEach(d => { if (!dbMetal[d]) dbMetal[d] = []; });
+        renderMetal();
+    });
 
-        dbRef.on('value', (snapshot) => {
-            db = snapshot.val() || {};
-            diametros.forEach(d => { if (!db[d]) db[d] = []; });
-            render();
+    dbRefDia.on('value', (snapshot) => {
+        dbDia = snapshot.val() || {};
+        CATALOGO_DIA.forEach(t => { if (!dbDia[t.id]) dbDia[t.id] = []; });
+        renderDia();
+    });
+
+    // --- CAMBIO DE PESTAÑA ---
+    function cambiarTab(tab) {
+        tabActual = tab;
+        document.getElementById('tabBtnMetal').classList.toggle('active', tab === 'metal');
+        document.getElementById('tabBtnDia').classList.toggle('active', tab === 'dia');
+        document.getElementById('panelMetal').classList.toggle('active', tab === 'metal');
+        document.getElementById('panelDia').classList.toggle('active', tab === 'dia');
+        actualizarBarraLote();
+    }
+
+    // --- BUSCAR UNA PIEZA POR CONTEXTO/GRUPO/CÓDIGO ---
+    function buscarPieza(ctx, grupo, cod) {
+        return (CTX[ctx].getArr(grupo)).find(p => p.id === cod);
+    }
+
+    // --- DETECCIÓN AUTOMÁTICA DE DIÁMETRO (solo metal duro) ---
+    function obtenerDiametroPorCodigo(codigo) {
+        const num = parseInt(codigo.replace(/\D/g, ""));
+        if (isNaN(num)) return null;
+        if (num >= 3000) return 200;
+        if (num >= 2000) return 520;
+        if (num >= 1000) return 430;
+        if (num >= 500)  return 380;
+        if (num >= 100)  return 350;
+        return null;
+    }
+
+    document.getElementById('nuevoCodigo').addEventListener('input', (e) => {
+        const d = obtenerDiametroPorCodigo(e.target.value);
+        const btn = document.getElementById('btnRegistrar');
+        const label = document.getElementById('regDiamLabel');
+        if (d) { label.innerText = d; btn.disabled = false; }
+        else { label.innerText = "---"; btn.disabled = true; }
+    });
+    document.getElementById('nuevoCodigo').addEventListener('keyup', (e) => {
+        if (e.key === 'Enter' && !document.getElementById('btnRegistrar').disabled) agregarSierra();
+    });
+
+    function agregarSierra() {
+        const codInput = document.getElementById('nuevoCodigo');
+        const cod = codInput.value.trim().toUpperCase();
+        const estadoInic = document.getElementById('nuevoEstado').value;
+
+        if (!cod) return toast("Ingresá un código", "error");
+        const diam = obtenerDiametroPorCodigo(cod);
+        if (!diam) return toast("Código fuera de rango válido", "error");
+
+        const existe = diametros.some(d => (dbMetal[d] || []).some(s => s.id === cod));
+        if (existe) return toast("Código duplicado en el sistema", "error");
+
+        if (!dbMetal[diam]) dbMetal[diam] = [];
+        dbMetal[diam].push({
+            id: cod, estado: estadoInic, afilados: 0, notas: '',
+            eventos: [{ fecha: new Date().toLocaleString(), msg: `Alta automática en Ø${diam}mm por ${nombreActual()}` }]
         });
 
-        function guardar() { dbRef.set(db); }
+        codInput.value = '';
+        document.getElementById('regDiamLabel').innerText = "---";
+        document.getElementById('btnRegistrar').disabled = true;
+        CTX.metal.guardarGrupo(diam);
+        toast(`Sierra ${cod} registrada en Ø${diam}mm`);
+    }
 
-        function obtenerDiametroPorCodigo(codigo) {
-            const num = parseInt(codigo.replace(/\D/g, "")); 
-            if (isNaN(num)) return null;
+    // --- REGISTRO DE PIEZAS DE DIAMANTE ---
+    const nuevoTipoDiaSel = document.getElementById('nuevoTipoDia');
+    nuevoTipoDiaSel.innerHTML = `<option value="">Elegí un tipo...</option>` +
+        CATALOGO_DIA.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
 
-            if (num >= 3000) return 200;  
-            if (num >= 2000) return 520;  
-            if (num >= 1000) return 430;  
-            if (num >= 500)  return 380;  
-            if (num >= 100)  return 350;  
-            return null;
-        }
+    function actualizarMaquinaDia() {
+        const tipo = CATALOGO_DIA.find(t => t.id === nuevoTipoDiaSel.value);
+        document.getElementById('maquinaDiaLabel').innerText = tipo ? tipo.maquina : 'Elegí un tipo';
+        validarRegistroDia();
+    }
+    nuevoTipoDiaSel.addEventListener('change', actualizarMaquinaDia);
 
-        document.getElementById('nuevoCodigo').addEventListener('input', (e) => {
-            const d = obtenerDiametroPorCodigo(e.target.value);
-            const btn = document.getElementById('btnRegistrar');
-            const label = document.getElementById('regDiam');
-            if(d) {
-                label.innerText = d;
-                btn.style.opacity = "1";
-                btn.style.cursor = "pointer";
-            } else {
-                label.innerText = "---";
-                btn.style.opacity = "0.6";
-            }
+    function validarRegistroDia() {
+        const tipoOk = !!nuevoTipoDiaSel.value;
+        const codOk = document.getElementById('nuevoCodigoDia').value.trim().length > 0;
+        document.getElementById('btnRegistrarDia').disabled = !(tipoOk && codOk);
+    }
+    document.getElementById('nuevoCodigoDia').addEventListener('input', validarRegistroDia);
+    document.getElementById('nuevoCodigoDia').addEventListener('keyup', (e) => {
+        if (e.key === 'Enter' && !document.getElementById('btnRegistrarDia').disabled) agregarPiezaDia();
+    });
+
+    function agregarPiezaDia() {
+        const tipoId = nuevoTipoDiaSel.value;
+        const codInput = document.getElementById('nuevoCodigoDia');
+        const cod = codInput.value.trim().toUpperCase();
+        const estadoInic = document.getElementById('nuevoEstadoDia').value;
+        const tipo = CATALOGO_DIA.find(t => t.id === tipoId);
+
+        if (!tipo) return toast('Elegí un tipo de herramienta', 'error');
+        if (!cod) return toast('Ingresá un código', 'error');
+
+        const existe = CATALOGO_DIA.some(t => (dbDia[t.id] || []).some(p => p.id === cod));
+        if (existe) return toast('Código duplicado en el sistema', 'error');
+
+        if (!dbDia[tipoId]) dbDia[tipoId] = [];
+        dbDia[tipoId].push({
+            id: cod, estado: estadoInic, veces: 0, notas: '',
+            eventos: [{ fecha: new Date().toLocaleString(), msg: `Alta en ${tipo.nombre} por ${nombreActual()}` }]
         });
 
-        function agregarSierra() {
-            if(usuarioActual.rol !== 'supervisor') return;
-            const codInput = document.getElementById('nuevoCodigo');
-            const cod = codInput.value.trim().toUpperCase();
-            const estadoInic = document.getElementById('nuevoEstado').value;
-            
-            if (!cod) return alert("Ingrese un código");
-            
-            const diam = obtenerDiametroPorCodigo(cod);
-            if (!diam) return alert("❌ Código fuera de rango válido.");
+        codInput.value = '';
+        document.getElementById('btnRegistrarDia').disabled = true;
+        CTX.dia.guardarGrupo(tipoId);
+        toast(`Pieza ${cod} registrada en ${tipo.nombre}`);
+    }
 
-            const existe = Object.values(db).flat().find(s => s.id === cod);
-            if(existe) return alert("⚠️ Código duplicado en el sistema");
+    // --- FILTRO POR TIPO (diamante) ---
+    const selectTipoDia = document.getElementById('selectTipoDia');
+    selectTipoDia.innerHTML = `<option value="">Todos los tipos</option>` +
+        CATALOGO_DIA.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
+    selectTipoDia.addEventListener('change', () => {
+        filtroGrupo.dia = selectTipoDia.value || null;
+        renderDia();
+    });
 
-            db[diam].push({
-                id: cod, 
-                estado: estadoInic, 
-                afilados: 0,
-                eventos: [{ fecha: new Date().toLocaleString(), msg: `Alta automática en Ø${diam}mm por ${usuarioActual.nombre}` }]
-            });
-
-            codInput.value = '';
-            document.getElementById('regDiam').innerText = "---";
-            guardar();
-            alert(`✅ Registrada sierra ${cod} en medida Ø${diam}mm`);
+    // --- MOVIMIENTOS (genérico para ambos contextos) ---
+    function moverGenerico(ctx, grupo, cod, nuevoEstado) {
+        if (nuevoEstado === 'baja') {
+            const nombreG = CTX[ctx].nombreGrupo(grupo);
+            confirmar(
+                'Dar de baja',
+                `¿Dar de baja la pieza ${cod} (${nombreG})? Esta acción queda registrada en su historial.`,
+                () => ejecutarMovimientoGenerico(ctx, grupo, cod, nuevoEstado)
+            );
+            return;
         }
+        ejecutarMovimientoGenerico(ctx, grupo, cod, nuevoEstado);
+    }
 
-        function mover(diam, cod, nuevoEstado) {
-            if(usuarioActual.rol !== 'supervisor') return;
-            const s = db[diam].find(x => x.id === cod);
-            let mensaje = `Cambiado a ${nuevoEstado.toUpperCase()} por ${usuarioActual.nombre}`;
+    function ejecutarMovimientoGenerico(ctx, grupo, cod, nuevoEstado) {
+        const cfg = CTX[ctx];
+        const p = buscarPieza(ctx, grupo, cod);
+        if (!p) return;
 
-            if (nuevoEstado === 'stock' && s.estado === 'afilar') s.afilados++;
-            
-            s.estado = nuevoEstado;
-            s.eventos.push({ fecha: new Date().toLocaleString(), msg: mensaje });
-            guardar();
+        if (p.estado === cfg.contadorOrigen && nuevoEstado === cfg.siguiente[cfg.contadorOrigen]) {
+            p[cfg.contadorCampo] = (p[cfg.contadorCampo] || 0) + 1;
         }
+        p.estado = nuevoEstado;
+        p.eventos.push({ fecha: new Date().toLocaleString(), msg: `Cambiado a ${nuevoEstado.toUpperCase()} por ${nombreActual()}` });
+        cfg.guardarGrupo(grupo);
+        cerrarModal('modalConfirm');
+        toast(`${cod} → ${nuevoEstado}`);
+    }
 
-        function verHistorial(diam, cod) {
-            const s = db[diam].find(x => x.id === cod);
-            document.getElementById('modalTitulo').innerText = `Historial: ${cod} (Ø${diam}mm)`;
-            document.getElementById('listaEventos').innerHTML = s.eventos.map(e => `
-                <div class="historial-item">
-                    <small>📅 ${e.fecha}</small><br>
-                    <strong>${e.msg}</strong>
-                </div>
-            `).reverse().join('');
-            document.getElementById('modalHistorial').style.display = "block";
+    // --- MODAL DE CONFIRMACIÓN GENÉRICO ---
+    function confirmar(titulo, cuerpo, onConfirm) {
+        document.getElementById('confirmTitulo').innerText = titulo;
+        document.getElementById('confirmBody').innerText = cuerpo;
+        const btn = document.getElementById('btnConfirmarAccion');
+        const nuevoBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(nuevoBtn, btn);
+        nuevoBtn.addEventListener('click', onConfirm);
+        document.getElementById('modalConfirm').style.display = "flex";
+    }
+
+    // --- HISTORIAL Y NOTAS (genérico) ---
+    let historialActual = null;
+    function verHistorialGenerico(ctx, grupo, cod) {
+        const p = buscarPieza(ctx, grupo, cod);
+        if (!p) return;
+        historialActual = { ctx, grupo, cod };
+        document.getElementById('modalTitulo').innerText = `Historial: ${cod} (${CTX[ctx].nombreGrupo(grupo)})`;
+        document.getElementById('listaEventos').innerHTML = p.eventos.map(e => `
+            <div class="historial-item">
+                <small>📅 ${e.fecha}</small><br>
+                <strong>${e.msg}</strong>
+            </div>
+        `).reverse().join('');
+        document.getElementById('notasTexto').value = p.notas || '';
+        document.getElementById('modalHistorial').style.display = "flex";
+    }
+
+    function guardarNotaGenerico() {
+        if (!historialActual) return;
+        const { ctx, grupo, cod } = historialActual;
+        const p = buscarPieza(ctx, grupo, cod);
+        if (!p) return;
+        p.notas = document.getElementById('notasTexto').value;
+        CTX[ctx].guardarGrupo(grupo);
+        toast('Nota guardada');
+    }
+
+    function cerrarModal(id) { document.getElementById(id).style.display = "none"; }
+
+    // --- EXPORTAR CSV (genérico) ---
+    function exportarCSV(ctx) {
+        const cfg = CTX[ctx];
+        let filas;
+        if (ctx === 'metal') {
+            filas = [['Diametro', 'Codigo', 'Estado', 'Afilados', 'Notas']];
+            cfg.grupos().forEach(g => cfg.getArr(g).forEach(p =>
+                filas.push([g, p.id, p.estado, p.afilados || 0, (p.notas || '').replace(/\n/g, ' ')])
+            ));
+        } else {
+            filas = [['Tipo', 'Maquina', 'Codigo', 'Estado', 'VecesAfilada', 'Notas']];
+            cfg.grupos().forEach(g => cfg.getArr(g).forEach(p =>
+                filas.push([cfg.nombreGrupo(g), (CATALOGO_DIA.find(t => t.id === g) || {}).maquina || '', p.id, p.estado, p.veces || 0, (p.notas || '').replace(/\n/g, ' ')])
+            ));
         }
+        const csv = filas.map(f => f.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+        const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${ctx === 'metal' ? 'metal_duro' : 'diamante'}_${new Date().toISOString().slice(0, 10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast('CSV exportado');
+    }
 
-        function cerrarModal() { document.getElementById('modalHistorial').style.display = "none"; }
+    // --- SELECCIÓN MÚLTIPLE / LOTE (genérico) ---
+    function toggleModoLote(ctx) {
+        modoLote[ctx] = !modoLote[ctx];
+        seleccion[ctx].clear();
+        const tablaId = ctx === 'metal' ? 'tablaSierras' : 'tablaDia';
+        const btnId = ctx === 'metal' ? 'btnModoLote' : 'btnModoLoteDia';
+        document.getElementById(tablaId).classList.toggle('modo-seleccion', modoLote[ctx]);
+        const btn = document.getElementById(btnId);
+        btn.classList.toggle('active', modoLote[ctx]);
+        btn.innerText = modoLote[ctx] ? '☒ Cancelar selección' : '☐ Seleccionar varias';
+        document.body.classList.toggle('modo-lote-activo', modoLote.metal || modoLote.dia);
+        renderTab(ctx);
+    }
 
-        function render() {
-            if(!usuarioActual) return;
-            const busqueda = document.getElementById('inputBuscar').value.toLowerCase();
-            
-            document.getElementById('tabsDiametros').innerHTML = `<button class="tab-btn ${!dActual ? 'active' : ''}" onclick="dActual=null;render()">TODAS</button>` + 
-                diametros.map(d => `<button class="tab-btn ${d===dActual?'active':''}" onclick="dActual=${d};render()">${d}mm</button>`).join('');
+    function toggleSeleccionFila(ctx, grupo, cod, checked) {
+        const key = `${grupo}__${cod}`;
+        if (checked) seleccion[ctx].add(key); else seleccion[ctx].delete(key);
+        actualizarBarraLote();
+    }
 
-            // 7. Agregamos 'desafiladas' al contador total
-            const tot = { stock: 0, uso: 0, desafiladas: 0, pendiente: 0, afilar: 0, baja: 0 };
-            diametros.forEach(d => db[d].forEach(s => {
-                if(tot[s.estado] !== undefined) tot[s.estado]++;
-            }));
-            
-            for (let k in tot) {
-                document.getElementById(`total-${k}`).innerText = tot[k];
-                document.getElementById(`card-${k}`).classList.toggle('active', eActual === k);
+    function toggleSeleccionarTodos(ctx, checked) {
+        const tablaId = ctx === 'metal' ? 'tablaSierras' : 'tablaDia';
+        document.querySelectorAll(`#${tablaId} .chk-fila[data-key]`).forEach(chk => {
+            chk.checked = checked;
+            if (checked) seleccion[ctx].add(chk.dataset.key); else seleccion[ctx].delete(chk.dataset.key);
+        });
+        actualizarBarraLote();
+    }
+
+    function clavesSeleccion(ctx) {
+        return [...seleccion[ctx]].map(k => {
+            const idx = k.indexOf('__');
+            const grupo = k.slice(0, idx);
+            const cod = k.slice(idx + 2);
+            const p = buscarPieza(ctx, grupo, cod);
+            return p ? { grupo, cod, p } : null;
+        }).filter(Boolean);
+    }
+
+    function actualizarBarraLote() {
+        const ctx = tabActual;
+        const bar = document.getElementById('bulkBar');
+        const items = clavesSeleccion(ctx);
+        if (items.length === 0) { bar.classList.remove('show'); return; }
+
+        const cfg = CTX[ctx];
+        const estados = new Set(items.map(i => i.p.estado));
+        document.getElementById('bulkCount').innerText = `${items.length} seleccionada${items.length === 1 ? '' : 's'}`;
+
+        let hint = '';
+        let botones = '';
+
+        if (estados.size === 1) {
+            const est = [...estados][0];
+            const siguiente = cfg.siguiente[est];
+            if (siguiente) {
+                botones += `<button class="btn-lote-accion" style="background:var(--${cfg.clase[siguiente]})" onclick="ejecutarLote('${siguiente}')">${cfg.etiqueta[est]} (${items.length})</button>`;
             }
+        } else {
+            hint = 'Hay estados distintos en la selección — solo se puede dar de baja en lote.';
+        }
 
-            let html = "";
-            const esSup = usuarioActual.rol === 'supervisor';
-            
-            diametros.forEach(d => {
-                db[d].forEach(s => {
-                    const cumpleFiltroDiam = !dActual || d === dActual;
-                    const cumpleFiltroEstado = !eActual || s.estado === eActual;
-                    const cumpleBusqueda = s.id.toLowerCase().includes(busqueda);
+        const bajeables = items.filter(i => i.p.estado !== 'baja');
+        if (bajeables.length > 0) {
+            botones += `<button class="btn-lote-accion btn-lote-baja" onclick="confirmarBajaLote()">Dar de baja (${bajeables.length})</button>`;
+        }
+        botones += `<button class="btn-lote-accion btn-lote-cancelar" onclick="limpiarSeleccion()">Cancelar</button>`;
 
-                    if (cumpleFiltroDiam && cumpleFiltroEstado && cumpleBusqueda) {
-                        // 8. Actualizamos la lógica de botones para incluir el nuevo flujo
-                        html += `<tr>
-                            <td><b>${d}mm</b></td>
-                            <td><code>${s.id}</code></td>
-                            <td><span class="badge badge-${s.estado}">${s.estado}</span></td>
-                            <td>🔁 ${s.afilados}</td>
-                            <td><button class="btn-hist" onclick="verHistorial(${d},'${s.id}')">Ver Hoja</button></td>
-                            ${esSup ? `<td>
-                                ${s.estado==='stock'?`<button class="btn-sm" style="background:var(--uso)" onclick="mover(${d},'${s.id}','uso')">Poner</button>`:''}
-                                ${s.estado==='uso'?`<button class="btn-sm" style="background:var(--desafiladas)" onclick="mover(${d},'${s.id}','desafiladas')">Desafilar</button>`:''}
-                                ${s.estado==='desafiladas'?`<button class="btn-sm" style="background:var(--pendiente)" onclick="mover(${d},'${s.id}','pendiente')">Preparar</button>`:''}
-                                ${s.estado==='pendiente'?`<button class="btn-sm" style="background:var(--afilar)" onclick="mover(${d},'${s.id}','afilar')">Enviar</button>`:''}
-                                ${s.estado==='afilar'?`<button class="btn-sm" style="background:var(--stock)" onclick="mover(${d},'${s.id}','stock')">Recibir</button>`:''}
-                                <button class="btn-sm" style="background:var(--baja)" onclick="mover(${d},'${s.id}','baja')">Baja</button>
-                            </td>` : '<td style="display:none"></td>'}
-                        </tr>`;
-                    }
+        document.getElementById('bulkHint').innerText = hint;
+        document.getElementById('bulkActions').innerHTML = botones;
+        bar.classList.add('show');
+    }
+
+    function limpiarSeleccion() {
+        seleccion[tabActual].clear();
+        renderTab(tabActual);
+    }
+
+    function ejecutarLote(nuevoEstado) {
+        const ctx = tabActual;
+        const cfg = CTX[ctx];
+        const items = clavesSeleccion(ctx);
+        const gruposTocados = new Set();
+        let n = 0;
+        items.forEach(({ grupo, p }) => {
+            if (cfg.siguiente[p.estado] === nuevoEstado) {
+                if (p.estado === cfg.contadorOrigen && nuevoEstado === cfg.siguiente[cfg.contadorOrigen]) {
+                    p[cfg.contadorCampo] = (p[cfg.contadorCampo] || 0) + 1;
+                }
+                p.estado = nuevoEstado;
+                p.eventos.push({ fecha: new Date().toLocaleString(), msg: `Cambiado a ${nuevoEstado.toUpperCase()} por ${nombreActual()} (lote de ${items.length})` });
+                gruposTocados.add(grupo);
+                n++;
+            }
+        });
+        gruposTocados.forEach(g => cfg.guardarGrupo(g));
+        seleccion[ctx].clear();
+        toast(`${n} sierras/piezas → ${nuevoEstado}`);
+        renderTab(ctx);
+    }
+
+    function confirmarBajaLote() {
+        const ctx = tabActual;
+        const cfg = CTX[ctx];
+        const items = clavesSeleccion(ctx).filter(i => i.p.estado !== 'baja');
+        confirmar(
+            'Dar de baja en lote',
+            `¿Dar de baja ${items.length} pieza${items.length === 1 ? '' : 's'}? Esta acción queda registrada en el historial de cada una.`,
+            () => {
+                const gruposTocados = new Set();
+                items.forEach(({ grupo, p }) => {
+                    p.estado = 'baja';
+                    p.eventos.push({ fecha: new Date().toLocaleString(), msg: `Cambiado a BAJA por ${nombreActual()} (lote de ${items.length})` });
+                    gruposTocados.add(grupo);
                 });
-            });
-            document.querySelector("#tablaSierras tbody").innerHTML = html;
-            document.querySelectorAll('.col-acciones').forEach(el => el.style.display = esSup ? '' : 'none');
+                gruposTocados.forEach(g => cfg.guardarGrupo(g));
+                seleccion[ctx].clear();
+                cerrarModal('modalConfirm');
+                toast(`${items.length} dadas de baja`);
+                renderTab(ctx);
+            }
+        );
+    }
+
+    function filtrarEstado(ctx, e) {
+        eActual[ctx] = (eActual[ctx] === e) ? null : e;
+        renderTab(ctx);
+    }
+
+    function renderTab(ctx) { ctx === 'metal' ? renderMetal() : renderDia(); }
+
+    // --- FILA DE TABLA (genérica) ---
+    function filaHTML(ctx, grupo, p) {
+        const cfg = CTX[ctx];
+        const key = `${grupo}__${p.id}`;
+        const marcada = seleccion[ctx].has(key);
+        const claseFila = cfg.clase[p.estado] || 'baja';
+        const contador = p[cfg.contadorCampo] || 0;
+
+        let accionesHtml = '';
+        const siguiente = cfg.siguiente[p.estado];
+        if (siguiente) {
+            accionesHtml += `<button class="btn-sm" style="background:var(--${cfg.clase[siguiente]})" onclick="moverGenerico('${ctx}','${grupo}','${p.id}','${siguiente}')">${cfg.etiqueta[p.estado]}</button>`;
+        }
+        if (p.estado !== 'baja') {
+            accionesHtml += `<button class="btn-sm" style="background:var(--baja)" onclick="moverGenerico('${ctx}','${grupo}','${p.id}','baja')">Baja</button>`;
         }
 
-        function filtrarEstado(e) { eActual = (eActual === e) ? null : e; render(); }
-        window.onclick = function(e) { if (e.target.className == 'modal') cerrarModal(); }
-    </script>
+        const colGrupo = ctx === 'metal'
+            ? `<td class="td-diam" data-label="Diámetro"><b>${cfg.nombreGrupo(grupo)}</b></td>`
+            : `<td class="td-tipo" data-label="Tipo"><b>${cfg.nombreGrupo(grupo)}</b></td><td class="td-maquina" data-label="Máquina">${(CATALOGO_DIA.find(t => t.id === grupo) || {}).maquina || ''}</td>`;
+
+        return `<tr class="row-${claseFila}">
+            <td class="col-check td-check"><input type="checkbox" class="chk-fila" data-key="${key}" ${marcada ? 'checked' : ''} onchange="toggleSeleccionFila('${ctx}','${grupo}','${p.id}',this.checked)"></td>
+            ${colGrupo}
+            <td class="td-cod" data-label="Código"><code>${p.id}</code></td>
+            <td class="td-estado" data-label="Estado"><span class="tag tag-${claseFila}">${cfg.textoEstado[p.estado] || p.estado}</span></td>
+            <td class="td-afilados" data-label="${ctx === 'metal' ? 'Afilados' : 'Veces afilada'}">🔁 ${contador}</td>
+            <td class="td-hist" data-label="Hoja de vida"><button class="btn-hist" onclick="verHistorialGenerico('${ctx}','${grupo}','${p.id}')">Ver hoja</button></td>
+            <td class="td-acciones" data-label="Acciones"><div class="acciones-cell">${accionesHtml}</div></td>
+        </tr>`;
+    }
+
+    // --- RENDER METAL DURO ---
+    function renderMetal() {
+        const busqueda = document.getElementById('inputBuscar').value.toLowerCase();
+
+        document.getElementById('tabsDiametros').innerHTML =
+            `<button class="diam-btn ${!filtroGrupo.metal ? 'active' : ''}" onclick="filtroGrupo.metal=null;renderMetal()">Todas</button>` +
+            diametros.map(d => `<button class="diam-btn ${filtroGrupo.metal === d ? 'active' : ''}" onclick="filtroGrupo.metal=${d};renderMetal()">${d}mm</button>`).join('');
+
+        const tot = {}; CTX.metal.estados.forEach(k => tot[k] = 0);
+        diametros.forEach(d => (dbMetal[d] || []).forEach(s => tot[s.estado]++));
+        CTX.metal.estados.forEach(k => {
+            document.getElementById(`total-${k}`).innerText = tot[k];
+            document.getElementById(`card-${k}`).classList.toggle('active', eActual.metal === k);
+        });
+
+        let html = ''; let count = 0;
+        diametros.forEach(d => {
+            (dbMetal[d] || []).forEach(s => {
+                const okDiam = !filtroGrupo.metal || d === filtroGrupo.metal;
+                const okEstado = !eActual.metal || s.estado === eActual.metal;
+                const okBusq = s.id.toLowerCase().includes(busqueda);
+                if (okDiam && okEstado && okBusq) { count++; html += filaHTML('metal', d, s); }
+            });
+        });
+        document.querySelector("#tablaSierras tbody").innerHTML = html;
+        document.getElementById('emptyState').style.display = count === 0 ? 'block' : 'none';
+        document.getElementById('tablaSierras').style.display = count === 0 ? 'none' : 'table';
+        if (tabActual === 'metal') actualizarBarraLote();
+    }
+
+    // --- RENDER DIAMANTE ---
+    function renderDia() {
+        const busqueda = document.getElementById('inputBuscarDia').value.toLowerCase();
+
+        const tot = {}; CTX.dia.estados.forEach(k => tot[k] = 0);
+        CATALOGO_DIA.forEach(t => (dbDia[t.id] || []).forEach(p => tot[p.estado]++));
+        CTX.dia.estados.forEach(k => {
+            document.getElementById(`totalDia-${k}`).innerText = tot[k];
+            document.getElementById(`cardDia-${k}`).classList.toggle('active', eActual.dia === k);
+        });
+
+        let html = ''; let count = 0;
+        CATALOGO_DIA.forEach(t => {
+            (dbDia[t.id] || []).forEach(p => {
+                const okTipo = !filtroGrupo.dia || t.id === filtroGrupo.dia;
+                const okEstado = !eActual.dia || p.estado === eActual.dia;
+                const okBusq = p.id.toLowerCase().includes(busqueda);
+                if (okTipo && okEstado && okBusq) { count++; html += filaHTML('dia', t.id, p); }
+            });
+        });
+        document.querySelector("#tablaDia tbody").innerHTML = html;
+        document.getElementById('emptyStateDia').style.display = count === 0 ? 'block' : 'none';
+        document.getElementById('tablaDia').style.display = count === 0 ? 'none' : 'table';
+        if (tabActual === 'dia') actualizarBarraLote();
+    }
+
+    window.onclick = function (e) { if (e.target.classList.contains('modal')) e.target.style.display = "none"; }
+
+    // --- PWA: registrar service worker (habilita "Instalar app") ---
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js').catch(() => { /* si falla, la app sigue funcionando igual */ });
+        });
+    }
+</script>
 </body>
 </html>
