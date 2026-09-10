@@ -120,6 +120,47 @@
     .login-box button:hover { background: #C8551E; }
     .login-error { color: var(--baja); font-size: 0.85em; margin-top: 12px; font-weight: 600; }
 
+    /* ---------- Menú lateral (hamburguesa) ---------- */
+    .btn-hamburguesa {
+        background: none; border: none; font-size: 1.5em; line-height: 1; cursor: pointer;
+        color: var(--ink); padding: 4px 6px; margin-right: 4px;
+    }
+    .menu-overlay {
+        display: none; position: fixed; inset: 0; background: rgba(28, 37, 48, 0.5); z-index: 400;
+    }
+    .menu-overlay.show { display: block; }
+    .menu-lateral {
+        position: fixed; top: 0; left: 0; bottom: 0; width: 280px; max-width: 85vw;
+        background: var(--steel-dark); z-index: 410; transform: translateX(-100%);
+        transition: transform 0.25s ease; padding-bottom: 20px; overflow-y: auto;
+        box-shadow: 4px 0 20px rgba(0,0,0,0.3);
+    }
+    .menu-lateral.show { transform: translateX(0); }
+    .menu-lateral-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 20px; border-bottom: 1px solid #3A4E5F; margin-bottom: 8px;
+    }
+    .menu-lateral-header h3 { color: white; margin: 0; font-size: 1.2em; }
+    .menu-lateral-close { background: none; border: none; color: #AEB9C2; font-size: 24px; cursor: pointer; line-height: 1; }
+    .menu-item {
+        display: flex; align-items: center; width: 100%; text-align: left; background: none; border: none;
+        color: #D8DEE3; padding: 14px 20px; font-size: 0.92em; cursor: pointer; font-family: inherit;
+    }
+    .menu-item:hover { background: rgba(255,255,255,0.07); color: white; }
+    .menu-item-icon { margin-right: 12px; font-size: 1.1em; }
+
+    /* ---------- Manual de uso ---------- */
+    .manual-content { max-width: 620px; }
+    .manual-content h3 { margin: 22px 0 8px; font-size: 1.1em; }
+    .manual-content h3:first-of-type { margin-top: 14px; }
+    .manual-intro { color: var(--ink-soft); font-size: 0.9em; margin-bottom: 4px; }
+    .manual-content ol { padding-left: 22px; margin: 8px 0; }
+    .manual-content li { margin-bottom: 10px; line-height: 1.5; font-size: 0.94em; }
+    .manual-nota {
+        background: var(--afilar-bg); border-left: 3px solid var(--afilar); padding: 10px 14px;
+        font-size: 0.86em; margin: 6px 0 18px; border-radius: 0 3px 3px 0; color: var(--ink);
+    }
+
     /* ---------- App tabs (Metal Duro / Diamante) ---------- */
     .app-tabs {
         display: flex; background: var(--steel-dark); padding: 0 24px;
@@ -465,6 +506,7 @@
 
 <div class="topbar">
     <div class="brand">
+        <button class="btn-hamburguesa" onclick="toggleMenuLateral()" aria-label="Abrir menú">☰</button>
         <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
             <circle cx="17" cy="17" r="15" stroke="#1C2530" stroke-width="2"/>
             <circle cx="17" cy="17" r="4" fill="#1C2530"/>
@@ -487,6 +529,44 @@
     <div class="sesion-info">
         <span>Conectado como <strong id="sesionNombre">—</strong></span>
         <button class="btn-salir" onclick="cerrarSesion()">Salir</button>
+    </div>
+</div>
+
+<div id="menuOverlay" class="menu-overlay" onclick="toggleMenuLateral()"></div>
+<div id="menuLateral" class="menu-lateral">
+    <div class="menu-lateral-header">
+        <h3>Menú</h3>
+        <button class="menu-lateral-close" onclick="toggleMenuLateral()" aria-label="Cerrar menú">&times;</button>
+    </div>
+    <button class="menu-item" onclick="abrirManual()"><span class="menu-item-icon">📖</span>Manual de uso — Metal Duro</button>
+</div>
+
+<div id="modalManual" class="modal">
+    <div class="modal-content manual-content">
+        <button class="close-btn" onclick="cerrarModal('modalManual')">&times;</button>
+        <h2 style="margin-top:0;">Manual de uso — Metal Duro (Sierras)</h2>
+        <p class="manual-intro">Guía rápida para preparar sierras para afilado y recibirlas de vuelta.</p>
+
+        <h3>1. Identificación</h3>
+        <p>Cada sierra está identificada con un código único, visible en la columna "Código" de la tabla.</p>
+
+        <h3>2. Enviar sierras a afilar</h3>
+        <ol>
+            <li>Activá <strong>"☐ Seleccionar varias"</strong>.</li>
+            <li>Usá el buscador (🔍) para encontrar cada sierra por su código.</li>
+            <li>Marcá el casillero de cada sierra encontrada. Repetí este paso con todos los códigos de las sierras disponibles para enviar a afilar.</li>
+            <li>Con todas seleccionadas, presioná <strong>"Poner en máquina"</strong>.</li>
+            <li>Volvé a seleccionar las mismas sierras y presioná <strong>"Retirar"</strong>.</li>
+            <li>Una vez coordinado el retiro con el comisionista, seleccioná nuevamente las sierras y presioná <strong>"Enviar a afilar"</strong>.</li>
+        </ol>
+        <div class="manual-nota">📌 El paso "Poner en máquina" está pensado para que en el futuro lo use directamente el supervisor de seccionadora — todavía está en desarrollo. Por ahora forma parte de la preparación del envío.</div>
+
+        <h3>3. Recibir sierras afiladas</h3>
+        <ol>
+            <li>Activá <strong>"☐ Seleccionar varias"</strong>.</li>
+            <li>Buscá y marcá, sierra por sierra, todos los códigos que llegaron afilados.</li>
+            <li>Con todas seleccionadas, presioná <strong>"Recibir"</strong>. Pasan automáticamente a Stock, disponibles para su uso.</li>
+        </ol>
     </div>
 </div>
 
@@ -750,6 +830,16 @@
     }
 
     mostrarSesionActiva();
+
+    // --- MENÚ LATERAL / MANUAL DE USO ---
+    function toggleMenuLateral() {
+        document.getElementById('menuLateral').classList.toggle('show');
+        document.getElementById('menuOverlay').classList.toggle('show');
+    }
+    function abrirManual() {
+        toggleMenuLateral();
+        document.getElementById('modalManual').style.display = 'flex';
+    }
 
     // --- TOASTS ---
     function toast(msg, tipo) {
