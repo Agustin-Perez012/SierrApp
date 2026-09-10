@@ -34,12 +34,16 @@
         --pendiente: #7857B0;
         --afilar: #C4841F;
         --baja: #AE3A2F;
+        --transito: #2B8C86;
+        --negro: #2B2B2E;
 
         --stock-bg: #E7F3EC;
         --uso-bg: #E9F1F8;
         --pendiente-bg: #F0EAF8;
         --afilar-bg: #FAF0E1;
         --baja-bg: #F8E9E7;
+        --transito-bg: #E4F2F1;
+        --negro-bg: #E6E5E3;
     }
 
     * { box-sizing: border-box; }
@@ -86,6 +90,36 @@
     }
     .quien input:focus-visible { outline: none; border-bottom-color: var(--steel); }
 
+    .sesion-info { display: flex; align-items: center; gap: 10px; font-size: 0.85em; color: var(--ink-soft); }
+    .sesion-info strong { color: var(--ink); }
+    .btn-salir {
+        background: none; border: 1px solid var(--line); color: var(--ink-soft); padding: 5px 10px;
+        border-radius: 2px; cursor: pointer; font-size: 0.8em; font-family: inherit;
+    }
+    .btn-salir:hover { border-color: var(--steel); color: var(--steel); }
+
+    /* ---------- Login ---------- */
+    .login-overlay {
+        display: flex; position: fixed; inset: 0; z-index: 500;
+        background: var(--steel-dark); align-items: center; justify-content: center; padding: 20px;
+    }
+    .login-box {
+        background: var(--surface); padding: 36px 32px; width: 100%; max-width: 360px;
+        border-radius: 6px; box-shadow: 0 10px 34px rgba(0,0,0,0.35); text-align: center;
+    }
+    .login-box h2 { margin: 14px 0 4px; font-size: 1.4em; }
+    .login-box p { color: var(--ink-soft); font-size: 0.85em; margin: 0 0 20px; }
+    .login-box select, .login-box input {
+        width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid var(--line);
+        border-radius: 2px; font-family: inherit; font-size: 0.95em; background: var(--surface);
+    }
+    .login-box button {
+        width: 100%; padding: 12px; background: var(--accent); color: white; border: none;
+        border-radius: 2px; font-weight: 700; cursor: pointer; font-size: 0.95em;
+    }
+    .login-box button:hover { background: #C8551E; }
+    .login-error { color: var(--baja); font-size: 0.85em; margin-top: 12px; font-weight: 600; }
+
     /* ---------- App tabs (Metal Duro / Diamante) ---------- */
     .app-tabs {
         display: flex; background: var(--steel-dark); padding: 0 24px;
@@ -120,11 +154,16 @@
     .stat-tile.pendiente { border-bottom-color: var(--pendiente); }
     .stat-tile.afilar { border-bottom-color: var(--afilar); }
     .stat-tile.baja { border-bottom-color: var(--baja); }
+    .stat-tile.transito { border-bottom-color: var(--transito); }
+    .stat-tile.negro { border-bottom-color: var(--negro); }
     .stat-value { font-family: 'Fjalla One', sans-serif; font-size: 2.1em; display: block; line-height: 1; }
     .stat-label { font-size: 0.76em; color: var(--ink-soft); font-weight: 600; margin-top: 6px; display: block; }
 
+    .stat-ledger.cols-6 { grid-template-columns: repeat(6, 1fr); }
+
     @media (max-width: 720px) {
         .stat-ledger { grid-template-columns: repeat(2, 1fr); }
+        .stat-ledger.cols-6 { grid-template-columns: repeat(2, 1fr); }
         .stat-tile { border-bottom-width: 4px; border-right: 1px solid var(--line); }
         .stat-tile:nth-child(2n) { border-right: none; }
     }
@@ -228,6 +267,8 @@
     tbody tr.row-pendiente { border-left-color: var(--pendiente); }
     tbody tr.row-afilar { border-left-color: var(--afilar); }
     tbody tr.row-baja { border-left-color: var(--baja); opacity: 0.7; }
+    tbody tr.row-transito { border-left-color: var(--transito); }
+    tbody tr.row-negro { border-left-color: var(--negro); opacity: 0.7; }
     tbody tr:hover { background: #FAF9F5; }
     td code { background: #F0EEE7; padding: 2px 7px; border-radius: 2px; font-size: 0.95em; }
 
@@ -240,6 +281,8 @@
     .tag-pendiente { background: var(--pendiente-bg); color: var(--pendiente); }
     .tag-afilar { background: var(--afilar-bg); color: var(--afilar); }
     .tag-baja { background: var(--baja-bg); color: var(--baja); }
+    .tag-transito { background: var(--transito-bg); color: var(--transito); }
+    .tag-negro { background: var(--negro-bg); color: var(--negro); }
 
     .btn-hist {
         background: transparent; color: var(--steel); border: 1px solid var(--line); padding: 6px 11px;
@@ -250,7 +293,11 @@
         padding: 6px 11px; border: none; border-radius: 2px; color: white; cursor: pointer;
         font-size: 0.78em; margin-right: 4px; font-weight: 700;
     }
-    .acciones-cell { display: flex; flex-wrap: wrap; gap: 4px; }
+    .mini-select {
+        padding: 6px 8px; border: 1px solid var(--line); border-radius: 2px; font-size: 0.78em;
+        font-family: inherit; background: var(--surface); color: var(--ink-soft); cursor: pointer;
+    }
+    .acciones-cell { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 
     .empty-state { padding: 60px 20px; text-align: center; color: var(--ink-soft); }
     .empty-state .display { font-size: 1.3em; color: var(--ink); margin-bottom: 6px; }
@@ -377,6 +424,35 @@
 </head>
 <body>
 
+<div id="loginOverlay" class="login-overlay">
+    <div class="login-box">
+        <svg width="40" height="40" viewBox="0 0 34 34" fill="none">
+            <circle cx="17" cy="17" r="15" stroke="#1C2530" stroke-width="2"/>
+            <circle cx="17" cy="17" r="4" fill="#1C2530"/>
+            <g stroke="#1C2530" stroke-width="2">
+                <line x1="17" y1="2" x2="17" y2="8"/>
+                <line x1="17" y1="26" x2="17" y2="32"/>
+                <line x1="2" y1="17" x2="8" y2="17"/>
+                <line x1="26" y1="17" x2="32" y2="17"/>
+                <line x1="6.5" y1="6.5" x2="10.5" y2="10.5"/>
+                <line x1="23.5" y1="23.5" x2="27.5" y2="27.5"/>
+                <line x1="27.5" y1="6.5" x2="23.5" y2="10.5"/>
+                <line x1="10.5" y1="23.5" x2="6.5" y2="27.5"/>
+            </g>
+        </svg>
+        <h2>Panel de Herramientas</h2>
+        <p>Elegí tu usuario para continuar</p>
+        <select id="loginUsuario">
+            <option value="">Elegí usuario...</option>
+            <option value="Compras">Compras</option>
+            <option value="Mantenimiento">Mantenimiento</option>
+        </select>
+        <input type="password" id="loginPass" placeholder="Contraseña">
+        <button onclick="intentarLogin()">Ingresar</button>
+        <div id="loginError" class="login-error" style="display:none;"></div>
+    </div>
+</div>
+
 <div id="installBanner" class="install-banner">
     <span class="install-banner-icon" id="installBannerIcon">📲</span>
     <div class="install-banner-text">
@@ -408,9 +484,9 @@
             <span>Metal duro y diamante — stock, uso y afilado</span>
         </div>
     </div>
-    <div class="quien">
-        <label for="inputUsuario">Registrando como</label>
-        <input type="text" id="inputUsuario" placeholder="Tu nombre" maxlength="24">
+    <div class="sesion-info">
+        <span>Conectado como <strong id="sesionNombre">—</strong></span>
+        <button class="btn-salir" onclick="cerrarSesion()">Salir</button>
     </div>
 </div>
 
@@ -496,20 +572,24 @@
     <!-- ================= PANEL DIAMANTE ================= -->
     <div id="panelDia" class="tab-panel">
 
-        <div class="stat-ledger">
+        <div class="stat-ledger cols-6">
             <div class="stat-tile stock" onclick="filtrarEstado('dia','nuevo')" id="cardDia-nuevo">
                 <span class="stat-value" id="totalDia-nuevo">0</span>
-                <span class="stat-label">Nuevo</span>
+                <span class="stat-label">Nuevas</span>
             </div>
             <div class="stat-tile uso" onclick="filtrarEstado('dia','usado')" id="cardDia-usado">
                 <span class="stat-value" id="totalDia-usado">0</span>
-                <span class="stat-label">Usado</span>
+                <span class="stat-label">Usadas</span>
             </div>
             <div class="stat-tile afilar" onclick="filtrarEstado('dia','pocavida')" id="cardDia-pocavida">
                 <span class="stat-value" id="totalDia-pocavida">0</span>
                 <span class="stat-label">Poca vida útil</span>
             </div>
-            <div class="stat-tile pendiente" onclick="filtrarEstado('dia','afilando')" id="cardDia-afilando">
+            <div class="stat-tile pendiente" onclick="filtrarEstado('dia','maquina')" id="cardDia-maquina">
+                <span class="stat-value" id="totalDia-maquina">0</span>
+                <span class="stat-label">En máquina</span>
+            </div>
+            <div class="stat-tile transito" onclick="filtrarEstado('dia','afilando')" id="cardDia-afilando">
                 <span class="stat-value" id="totalDia-afilando">0</span>
                 <span class="stat-label">En afilado</span>
             </div>
@@ -624,11 +704,52 @@
     const dbRef = firebase.database().ref();             // metal duro: sigue en la raíz (datos existentes)
     const dbRefDia = firebase.database().ref('diamante'); // diamante: nodo aparte, no pisa nada de metal duro
 
-    // --- USUARIO (solo identificación para el historial, sin login) ---
-    const inputUsuario = document.getElementById('inputUsuario');
-    inputUsuario.value = localStorage.getItem('sierras_usuario') || '';
-    inputUsuario.addEventListener('change', () => localStorage.setItem('sierras_usuario', inputUsuario.value.trim()));
-    function nombreActual() { return inputUsuario.value.trim() || 'Sin identificar'; }
+    // --- LOGIN (2 usuarios fijos, valida contraseña, identifica en el historial) ---
+    const CREDENCIALES_LOGIN = { 'Compras': 'A12PZ', 'Mantenimiento': 'MANT1975' };
+    const LOGIN_KEY = 'herramientas_usuario_activo';
+
+    function nombreActual() { return localStorage.getItem(LOGIN_KEY) || 'Sin identificar'; }
+
+    function mostrarSesionActiva() {
+        const u = localStorage.getItem(LOGIN_KEY);
+        if (u && CREDENCIALES_LOGIN[u]) {
+            document.getElementById('sesionNombre').innerText = u;
+            document.getElementById('loginOverlay').style.display = 'none';
+        } else {
+            document.getElementById('loginOverlay').style.display = 'flex';
+        }
+    }
+
+    function intentarLogin() {
+        const u = document.getElementById('loginUsuario').value;
+        const pass = document.getElementById('loginPass').value;
+        const err = document.getElementById('loginError');
+
+        if (!u) { err.innerText = 'Elegí un usuario.'; err.style.display = 'block'; return; }
+        if (CREDENCIALES_LOGIN[u] !== pass) {
+            err.innerText = 'Contraseña incorrecta.';
+            err.style.display = 'block';
+            document.getElementById('loginPass').value = '';
+            return;
+        }
+        localStorage.setItem(LOGIN_KEY, u);
+        err.style.display = 'none';
+        document.getElementById('loginPass').value = '';
+        mostrarSesionActiva();
+    }
+
+    document.getElementById('loginPass').addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') intentarLogin();
+    });
+
+    function cerrarSesion() {
+        localStorage.removeItem(LOGIN_KEY);
+        document.getElementById('loginUsuario').value = '';
+        document.getElementById('loginPass').value = '';
+        mostrarSesionActiva();
+    }
+
+    mostrarSesionActiva();
 
     // --- TOASTS ---
     function toast(msg, tipo) {
@@ -676,16 +797,20 @@
             nombreGrupo: (g) => `${g}mm`,
         },
         dia: {
-            estados: ['nuevo', 'usado', 'pocavida', 'afilando', 'baja'],
+            // 3 estados "base" (condición real de la pieza): nuevo, usado, pocavida.
+            // 'maquina' y 'afilando' son estados de tránsito: al volver de afilado,
+            // la pieza recupera por defecto el estado base que tenía antes de entrar
+            // a máquina (estadoPrevio) — o se puede elegir manualmente otro.
+            estados: ['nuevo', 'usado', 'pocavida', 'maquina', 'afilando', 'baja'],
+            estadosBase: ['nuevo', 'usado', 'pocavida'],
             grupos: () => CATALOGO_DIA.map(t => t.id),
             getArr: (g) => dbDia[g] || (dbDia[g] = []),
             guardarGrupo: (g) => dbRefDia.child(g).set(dbDia[g] || []),
-            siguiente: { nuevo: 'usado', usado: 'pocavida', pocavida: 'afilando', afilando: 'usado' },
-            etiqueta: { nuevo: 'Poner en uso', usado: 'Marcar poca vida útil', pocavida: 'Enviar a afilar', afilando: 'Recibir afilada' },
-            clase: { nuevo: 'stock', usado: 'uso', pocavida: 'afilar', afilando: 'pendiente', baja: 'baja' },
-            textoEstado: { nuevo: 'nuevo', usado: 'usado', pocavida: 'poca vida útil', afilando: 'en afilado', baja: 'baja' },
+            siguiente: { nuevo: 'maquina', usado: 'maquina', pocavida: 'maquina', maquina: 'afilando' },
+            etiqueta: { nuevo: 'Poner en máquina', usado: 'Poner en máquina', pocavida: 'Poner en máquina', maquina: 'Enviar a afilar' },
+            clase: { nuevo: 'stock', usado: 'afilar', pocavida: 'baja', maquina: 'pendiente', afilando: 'transito', baja: 'negro' },
+            textoEstado: { nuevo: 'nueva', usado: 'usada', pocavida: 'poca vida útil', maquina: 'en máquina', afilando: 'en afilado', baja: 'baja' },
             contadorCampo: 'veces',
-            contadorOrigen: 'afilando',
             nombreGrupo: (g) => (CATALOGO_DIA.find(t => t.id === g) || {}).nombre || g,
         }
     };
@@ -846,14 +971,22 @@
         const p = buscarPieza(ctx, grupo, cod);
         if (!p) return;
 
-        if (p.estado === cfg.contadorOrigen && nuevoEstado === cfg.siguiente[cfg.contadorOrigen]) {
-            p[cfg.contadorCampo] = (p[cfg.contadorCampo] || 0) + 1;
+        if (ctx === 'dia') {
+            // Al entrar a máquina, guardamos en qué estado base estaba para poder devolverla ahí.
+            if (nuevoEstado === 'maquina') p.estadoPrevio = p.estado;
+            // Al salir de afilado (vuelva a donde vuelva), cuenta como un afilado más.
+            if (p.estado === 'afilando') p[cfg.contadorCampo] = (p[cfg.contadorCampo] || 0) + 1;
+        } else {
+            if (p.estado === cfg.contadorOrigen && nuevoEstado === cfg.siguiente[cfg.contadorOrigen]) {
+                p[cfg.contadorCampo] = (p[cfg.contadorCampo] || 0) + 1;
+            }
         }
         p.estado = nuevoEstado;
-        p.eventos.push({ fecha: new Date().toLocaleString(), msg: `Cambiado a ${nuevoEstado.toUpperCase()} por ${nombreActual()}` });
+        const textoNuevo = (cfg.textoEstado && cfg.textoEstado[nuevoEstado]) || nuevoEstado;
+        p.eventos.push({ fecha: new Date().toLocaleString(), msg: `Cambiado a ${textoNuevo.toUpperCase()} por ${nombreActual()}` });
         cfg.guardarGrupo(grupo);
         cerrarModal('modalConfirm');
-        toast(`${cod} → ${nuevoEstado}`);
+        toast(`${cod} → ${textoNuevo}`);
     }
 
     // --- MODAL DE CONFIRMACIÓN GENÉRICO ---
@@ -903,12 +1036,12 @@
         if (ctx === 'metal') {
             filas = [['Diametro', 'Codigo', 'Estado', 'Afilados', 'Notas']];
             cfg.grupos().forEach(g => cfg.getArr(g).forEach(p =>
-                filas.push([g, p.id, p.estado, p.afilados || 0, (p.notas || '').replace(/\n/g, ' ')])
+                filas.push([g, p.id, cfg.textoEstado[p.estado] || p.estado, p.afilados || 0, (p.notas || '').replace(/\n/g, ' ')])
             ));
         } else {
             filas = [['Tipo', 'Maquina', 'Codigo', 'Estado', 'VecesAfilada', 'Notas']];
             cfg.grupos().forEach(g => cfg.getArr(g).forEach(p =>
-                filas.push([cfg.nombreGrupo(g), (CATALOGO_DIA.find(t => t.id === g) || {}).maquina || '', p.id, p.estado, p.veces || 0, (p.notas || '').replace(/\n/g, ' ')])
+                filas.push([cfg.nombreGrupo(g), (CATALOGO_DIA.find(t => t.id === g) || {}).maquina || '', p.id, cfg.textoEstado[p.estado] || p.estado, p.veces || 0, (p.notas || '').replace(/\n/g, ' ')])
             ));
         }
         const csv = filas.map(f => f.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
@@ -976,9 +1109,13 @@
 
         if (estados.size === 1) {
             const est = [...estados][0];
-            const siguiente = cfg.siguiente[est];
-            if (siguiente) {
-                botones += `<button class="btn-lote-accion" style="background:var(--${cfg.clase[siguiente]})" onclick="ejecutarLote('${siguiente}')">${cfg.etiqueta[est]} (${items.length})</button>`;
+            if (ctx === 'dia' && est === 'afilando') {
+                botones += `<button class="btn-lote-accion" style="background:var(--stock)" onclick="ejecutarLoteRecibirAfilando()">Recibir afiladas (${items.length})</button>`;
+            } else {
+                const siguiente = cfg.siguiente[est];
+                if (siguiente) {
+                    botones += `<button class="btn-lote-accion" style="background:var(--${cfg.clase[siguiente]})" onclick="ejecutarLote('${siguiente}')">${cfg.etiqueta[est]} (${items.length})</button>`;
+                }
             }
         } else {
             hint = 'Hay estados distintos en la selección — solo se puede dar de baja en lote.';
@@ -986,7 +1123,7 @@
 
         const bajeables = items.filter(i => i.p.estado !== 'baja');
         if (bajeables.length > 0) {
-            botones += `<button class="btn-lote-accion btn-lote-baja" onclick="confirmarBajaLote()">Dar de baja (${bajeables.length})</button>`;
+            botones += `<button class="btn-lote-accion btn-lote-baja" style="background:var(--${cfg.clase.baja || 'baja'})" onclick="confirmarBajaLote()">Dar de baja (${bajeables.length})</button>`;
         }
         botones += `<button class="btn-lote-accion btn-lote-cancelar" onclick="limpiarSeleccion()">Cancelar</button>`;
 
@@ -1008,18 +1145,41 @@
         let n = 0;
         items.forEach(({ grupo, p }) => {
             if (cfg.siguiente[p.estado] === nuevoEstado) {
-                if (p.estado === cfg.contadorOrigen && nuevoEstado === cfg.siguiente[cfg.contadorOrigen]) {
+                if (ctx === 'dia') {
+                    if (nuevoEstado === 'maquina') p.estadoPrevio = p.estado;
+                } else if (p.estado === cfg.contadorOrigen && nuevoEstado === cfg.siguiente[cfg.contadorOrigen]) {
                     p[cfg.contadorCampo] = (p[cfg.contadorCampo] || 0) + 1;
                 }
                 p.estado = nuevoEstado;
-                p.eventos.push({ fecha: new Date().toLocaleString(), msg: `Cambiado a ${nuevoEstado.toUpperCase()} por ${nombreActual()} (lote de ${items.length})` });
+                const textoNuevo = (cfg.textoEstado && cfg.textoEstado[nuevoEstado]) || nuevoEstado;
+                p.eventos.push({ fecha: new Date().toLocaleString(), msg: `Cambiado a ${textoNuevo.toUpperCase()} por ${nombreActual()} (lote de ${items.length})` });
                 gruposTocados.add(grupo);
                 n++;
             }
         });
         gruposTocados.forEach(g => cfg.guardarGrupo(g));
         seleccion[ctx].clear();
-        toast(`${n} sierras/piezas → ${nuevoEstado}`);
+        toast(`${n} piezas actualizadas`);
+        renderTab(ctx);
+    }
+
+    // Caso especial diamante: recibir en lote piezas que están "en afilado".
+    // Cada una vuelve a SU PROPIO estado anterior (no todas al mismo).
+    function ejecutarLoteRecibirAfilando() {
+        const ctx = 'dia';
+        const cfg = CTX.dia;
+        const items = clavesSeleccion(ctx).filter(i => i.p.estado === 'afilando');
+        const gruposTocados = new Set();
+        items.forEach(({ grupo, p }) => {
+            const destino = p.estadoPrevio || 'usado';
+            p[cfg.contadorCampo] = (p[cfg.contadorCampo] || 0) + 1;
+            p.estado = destino;
+            p.eventos.push({ fecha: new Date().toLocaleString(), msg: `Cambiado a ${cfg.textoEstado[destino].toUpperCase()} por ${nombreActual()} (lote de ${items.length})` });
+            gruposTocados.add(grupo);
+        });
+        gruposTocados.forEach(g => cfg.guardarGrupo(g));
+        seleccion[ctx].clear();
+        toast(`${items.length} piezas recibidas`);
         renderTab(ctx);
     }
 
@@ -1062,12 +1222,33 @@
         const contador = p[cfg.contadorCampo] || 0;
 
         let accionesHtml = '';
-        const siguiente = cfg.siguiente[p.estado];
-        if (siguiente) {
-            accionesHtml += `<button class="btn-sm" style="background:var(--${cfg.clase[siguiente]})" onclick="moverGenerico('${ctx}','${grupo}','${p.id}','${siguiente}')">${cfg.etiqueta[p.estado]}</button>`;
+
+        if (ctx === 'dia' && p.estado === 'afilando') {
+            // Vuelve por defecto a su estado anterior a máquina; se puede elegir otro manualmente.
+            const previo = p.estadoPrevio || 'usado';
+            accionesHtml += `<button class="btn-sm" style="background:var(--${cfg.clase[previo]})" onclick="moverGenerico('dia','${grupo}','${p.id}','${previo}')">Recibir (→ ${cfg.textoEstado[previo]})</button>`;
+            const otras = cfg.estadosBase.filter(e => e !== previo);
+            accionesHtml += `<select class="mini-select" onchange="if(this.value){moverGenerico('dia','${grupo}','${p.id}',this.value);} this.selectedIndex=0;">
+                <option value="">Recibir como otra...</option>
+                ${otras.map(e => `<option value="${e}">${cfg.textoEstado[e]}</option>`).join('')}
+            </select>`;
+        } else if (ctx === 'dia' && cfg.estadosBase.includes(p.estado)) {
+            const siguiente = cfg.siguiente[p.estado];
+            accionesHtml += `<button class="btn-sm" style="background:var(--${cfg.clase[siguiente]})" onclick="moverGenerico('dia','${grupo}','${p.id}','${siguiente}')">${cfg.etiqueta[p.estado]}</button>`;
+            const otras = cfg.estadosBase.filter(e => e !== p.estado);
+            accionesHtml += `<select class="mini-select" onchange="if(this.value){moverGenerico('dia','${grupo}','${p.id}',this.value);} this.selectedIndex=0;">
+                <option value="">Cambiar a...</option>
+                ${otras.map(e => `<option value="${e}">${cfg.textoEstado[e]}</option>`).join('')}
+            </select>`;
+        } else {
+            const siguiente = cfg.siguiente[p.estado];
+            if (siguiente) {
+                accionesHtml += `<button class="btn-sm" style="background:var(--${cfg.clase[siguiente]})" onclick="moverGenerico('${ctx}','${grupo}','${p.id}','${siguiente}')">${cfg.etiqueta[p.estado]}</button>`;
+            }
         }
+
         if (p.estado !== 'baja') {
-            accionesHtml += `<button class="btn-sm" style="background:var(--baja)" onclick="moverGenerico('${ctx}','${grupo}','${p.id}','baja')">Baja</button>`;
+            accionesHtml += `<button class="btn-sm" style="background:var(--${cfg.clase.baja || 'baja'})" onclick="moverGenerico('${ctx}','${grupo}','${p.id}','baja')">Baja</button>`;
         }
 
         const colGrupo = ctx === 'metal'
