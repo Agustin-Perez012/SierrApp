@@ -555,10 +555,11 @@
             <li>Activá <strong>"☐ Seleccionar varias"</strong>.</li>
             <li>Usá el buscador (🔍) para encontrar cada sierra por su código.</li>
             <li>Marcá el casillero de cada sierra encontrada. Repetí este paso con todos los códigos de las sierras disponibles para enviar a afilar.</li>
-            <li>Con todas seleccionadas, presioná <strong>"Preparar"</strong>. Se descarga automáticamente el remito en PDF con los códigos agrupados por diámetro.</li>
+            <li>Con todas seleccionadas, presioná <strong>"Preparar"</strong>.</li>
+            <li>Cuando esté todo listo para el envío, presioná <strong>"📄 Remito de afilado"</strong> — junta TODAS las sierras que estén en Preparado (no solo las de la última tanda) y descarga un PDF con los códigos agrupados por diámetro.</li>
             <li>Una vez coordinado el retiro con el comisionista, seleccioná nuevamente las sierras y presioná <strong>"Enviar a afilar"</strong>.</li>
         </ol>
-        <div class="manual-nota">📌 El remito PDF trae completos el código (diámetro), la cantidad y la descripción con todos los números de sierra. Los bultos y la firma se completan a mano sobre el papel impreso.</div>
+        <div class="manual-nota">📌 El botón "Remito de afilado" siempre junta TODO lo que esté en Preparado en ese momento, sin importar cuándo se preparó cada sierra. Los bultos y las firmas se completan a mano sobre el PDF impreso.</div>
 
         <h3>3. Recibir sierras afiladas</h3>
         <ol>
@@ -611,6 +612,7 @@
             </div>
             <button class="btn-csv" onclick="exportarCSV('metal')">⬇ Exportar CSV</button>
             <button class="btn-lote" id="btnModoLote" onclick="toggleModoLote('metal')">☐ Seleccionar varias</button>
+            <button class="btn-csv" onclick="descargarRemitoPendientes()">📄 Remito de afilado</button>
 
             <div class="panel-registro">
                 <input type="text" id="nuevoCodigo" placeholder="Código (ej: 2045)">
@@ -845,48 +847,136 @@
     }
 
     // --- REMITO PDF (se genera al "Preparar" sierras de metal duro) ---
+    // Junta TODAS las sierras que están hoy en "Preparado" (pendiente), sin importar
+    // cuándo se prepararon, y arma un solo remito con todas.
+    function descargarRemitoPendientes() {
+        const items = [];
+        diametros.forEach(d => {
+            (dbMetal[d] || []).forEach(s => {
+                if (s.estado === 'pendiente') items.push({ grupo: d, cod: s.id });
+            });
+        });
+        if (!items.length) { toast('No hay sierras en Preparado para armar el remito', 'warn'); return; }
+        generarRemitoPDF(items);
+    }
+
+    // Remito con el mismo diseño del papel de Muebles Orlandi (colores, franjas, membrete).
+    // No incluye N° de remito, código de barras ni C.A.I.: esos números pertenecen al
+    // talonario preimpreso autorizado por AFIP y no corresponde generarlos por software.
     function generarRemitoPDF(items) {
         if (!items || !items.length) return;
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
+
+        const SALMON = [232, 205, 195];
+        const AZULITO = [215, 225, 234];
+        const AZUL = [78, 123, 163];
+        const AZUL_OSCURO = [27, 58, 92];
+        const ROJO = [176, 71, 62];
+        const MARRON = [139, 46, 46];
+        const GRIS = [110, 110, 110];
 
         const porDiametro = {};
         items.forEach(({ grupo, cod }) => {
             if (!porDiametro[grupo]) porDiametro[grupo] = [];
             porDiametro[grupo].push(cod);
         });
-
         const filas = diametros
             .filter(d => porDiametro[d] && porDiametro[d].length)
             .map(d => [`${d}`, String(porDiametro[d].length), porDiametro[d].join(' _ ')]);
 
         const fecha = new Date().toLocaleDateString('es-AR');
 
-        doc.setFontSize(16);
-        doc.text('Remito de Envío a Afilado', 14, 18);
-        doc.setFontSize(10);
-        doc.setTextColor(90, 90, 90);
-        doc.text(`Fecha: ${fecha}`, 14, 26);
-        doc.text(`Preparado por: ${nombreActual()}`, 14, 31);
-        doc.setTextColor(0, 0, 0);
+        // --- Encabezado (franja salmón, igual al papel) ---
+        doc.setFillColor(...SALMON);
+        doc.rect(0, 0, 210, 34, 'F');
 
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(15);
+        doc.setTextColor(...MARRON);
+        doc.text('MUEBLES ORLANDI', 14, 13);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(...AZUL_OSCURO);
+        doc.text('FÁBRICA DE PLACARES Y JUEGOS DE DORMITORIOS', 14, 18);
+        doc.setTextColor(...GRIS);
+        doc.text('Independencia 342 - Tel/Fax: 03462-470357/471481 - 2732 Elortondo (Sta. Fe)', 14, 22.5);
+        doc.text('info@mueblesorlandi.com.ar   ·   www.mueblesorlandi.com.ar', 14, 26.5);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(13);
+        doc.setTextColor(...AZUL_OSCURO);
+        doc.text('REMITO DE ENVÍO A AFILADO', 196, 13, { align: 'right' });
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(7.5);
+        doc.text('Documento interno — no válido como factura', 196, 18, { align: 'right' });
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...GRIS);
+        doc.text(`Fecha: ${fecha}`, 196, 24, { align: 'right' });
+        doc.text(`Preparado por: ${nombreActual()}`, 196, 28, { align: 'right' });
+
+        // --- Franja "Enviado a" (equivalente a Señor/es) ---
+        doc.setFillColor(...AZULITO);
+        doc.rect(0, 34, 210, 9, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(...AZUL_OSCURO);
+        doc.text('Enviado a:', 14, 40);
+        doc.setFont('helvetica', 'normal');
+        doc.setDrawColor(...GRIS);
+        doc.line(35, 40.5, 196, 40.5);
+
+        // --- Tabla de sierras (código = diámetro) ---
         doc.autoTable({
-            startY: 38,
-            head: [['Código', 'Cantidad', 'Descripción']],
+            startY: 48,
+            margin: { left: 14, right: 14 },
+            head: [['CÓDIGO', 'CANTIDAD', 'DESCRIPCIÓN']],
             body: filas,
-            styles: { fontSize: 9, cellPadding: 4, valign: 'middle' },
-            headStyles: { fillColor: [34, 55, 73] },
-            columnStyles: { 0: { cellWidth: 24 }, 1: { cellWidth: 24 } },
+            styles: { fontSize: 9, cellPadding: 4, valign: 'middle', lineColor: [200, 200, 200] },
+            headStyles: { fillColor: AZUL, textColor: 255, fontStyle: 'bold' },
+            columnStyles: { 0: { cellWidth: 24, halign: 'center' }, 1: { cellWidth: 24, halign: 'center' }, 2: { cellWidth: 134 } },
+            didParseCell: (data) => {
+                if (data.section === 'body' && data.column.index === 0) data.cell.styles.fillColor = SALMON;
+                if (data.section === 'body' && data.column.index === 1) data.cell.styles.fillColor = AZULITO;
+            },
         });
 
-        let y = doc.lastAutoTable.finalY + 22;
+        // --- Bultos ---
+        let y = doc.lastAutoTable.finalY + 14;
         doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
         doc.text('Bultos: _______________________', 14, y);
+
+        // --- Pie: Remitido por / Recepción de la mercadería (igual al papel) ---
+        y += 14;
+        doc.setFillColor(...ROJO);
+        doc.rect(14, y, 88, 7, 'F');
+        doc.setFillColor(...AZUL);
+        doc.rect(108, y, 88, 7, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(255, 255, 255);
+        doc.text('REMITIDO POR', 58, y + 4.8, { align: 'center' });
+        doc.text('RECEPCIÓN DE LA MERCADERÍA', 152, y + 4.8, { align: 'center' });
+
         y += 24;
-        doc.line(14, y, 92, y);
-        doc.text('Remitido por (firma y aclaración)', 14, y + 5);
-        doc.line(118, y, 196, y);
-        doc.text('Recepción de la mercadería', 118, y + 5);
+        doc.setDrawColor(...GRIS);
+        doc.line(14, y, 60, y);
+        doc.line(66, y, 102, y);
+        doc.line(108, y, 154, y);
+        doc.line(160, y, 196, y);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(...GRIS);
+        doc.text('Firma', 30, y + 4);
+        doc.text('Aclaración', 76, y + 4);
+        doc.text('Firma', 124, y + 4);
+        doc.text('Aclaración', 170, y + 4);
+
+        doc.setFontSize(7);
+        doc.setTextColor(...GRIS);
+        doc.text('Documento generado automáticamente por el Panel de Herramientas — no reemplaza el remito oficial numerado.', 105, 288, { align: 'center' });
 
         doc.save(`remito_afilado_${new Date().toISOString().slice(0, 10)}.pdf`);
     }
@@ -1129,10 +1219,6 @@
         cfg.guardarGrupo(grupo);
         cerrarModal('modalConfirm');
         toast(`${cod} → ${textoNuevo}`);
-
-        if (ctx === 'metal' && nuevoEstado === 'pendiente') {
-            generarRemitoPDF([{ grupo, cod }]);
-        }
     }
 
     // --- MODAL DE CONFIRMACIÓN GENÉRICO ---
@@ -1288,7 +1374,6 @@
         const cfg = CTX[ctx];
         const items = clavesSeleccion(ctx);
         const gruposTocados = new Set();
-        const movidos = [];
         let n = 0;
         items.forEach(({ grupo, p }) => {
             if (cfg.siguiente[p.estado] === nuevoEstado) {
@@ -1301,7 +1386,6 @@
                 const textoNuevo = (cfg.textoEstado && cfg.textoEstado[nuevoEstado]) || nuevoEstado;
                 p.eventos.push({ fecha: new Date().toLocaleString(), msg: `Cambiado a ${textoNuevo.toUpperCase()} por ${nombreActual()} (lote de ${items.length})` });
                 gruposTocados.add(grupo);
-                movidos.push({ grupo, cod: p.id });
                 n++;
             }
         });
@@ -1309,10 +1393,6 @@
         seleccion[ctx].clear();
         toast(`${n} piezas actualizadas`);
         renderTab(ctx);
-
-        if (ctx === 'metal' && nuevoEstado === 'pendiente' && movidos.length) {
-            generarRemitoPDF(movidos);
-        }
     }
 
     // Caso especial diamante: recibir en lote piezas que están "en afilado".
