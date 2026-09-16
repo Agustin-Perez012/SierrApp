@@ -555,11 +555,10 @@
             <li>Activá <strong>"☐ Seleccionar varias"</strong>.</li>
             <li>Usá el buscador (🔍) para encontrar cada sierra por su código.</li>
             <li>Marcá el casillero de cada sierra encontrada. Repetí este paso con todos los códigos de las sierras disponibles para enviar a afilar.</li>
-            <li>Con todas seleccionadas, presioná <strong>"Poner en máquina"</strong>.</li>
-            <li>Volvé a seleccionar las mismas sierras y presioná <strong>"Retirar"</strong>.</li>
+            <li>Con todas seleccionadas, presioná <strong>"Preparar"</strong>. Se descarga automáticamente el remito en PDF con los códigos agrupados por diámetro.</li>
             <li>Una vez coordinado el retiro con el comisionista, seleccioná nuevamente las sierras y presioná <strong>"Enviar a afilar"</strong>.</li>
         </ol>
-        <div class="manual-nota">📌 El paso "Poner en máquina" está pensado para que en el futuro lo use directamente el supervisor de seccionadora — todavía está en desarrollo. Por ahora forma parte de la preparación del envío.</div>
+        <div class="manual-nota">📌 El remito PDF trae completos el código (diámetro), la cantidad y la descripción con todos los números de sierra. Los bultos y la firma se completan a mano sobre el papel impreso.</div>
 
         <h3>3. Recibir sierras afiladas</h3>
         <ol>
@@ -770,6 +769,10 @@
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
 
+<!-- PDF: remito de envío a afilado -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
 <script>
     // --- CONFIGURACIÓN FIREBASE ---
     const firebaseConfig = {
@@ -841,6 +844,53 @@
         document.getElementById('modalManual').style.display = 'flex';
     }
 
+    // --- REMITO PDF (se genera al "Preparar" sierras de metal duro) ---
+    function generarRemitoPDF(items) {
+        if (!items || !items.length) return;
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        const porDiametro = {};
+        items.forEach(({ grupo, cod }) => {
+            if (!porDiametro[grupo]) porDiametro[grupo] = [];
+            porDiametro[grupo].push(cod);
+        });
+
+        const filas = diametros
+            .filter(d => porDiametro[d] && porDiametro[d].length)
+            .map(d => [`${d}`, String(porDiametro[d].length), porDiametro[d].join(' _ ')]);
+
+        const fecha = new Date().toLocaleDateString('es-AR');
+
+        doc.setFontSize(16);
+        doc.text('Remito de Envío a Afilado', 14, 18);
+        doc.setFontSize(10);
+        doc.setTextColor(90, 90, 90);
+        doc.text(`Fecha: ${fecha}`, 14, 26);
+        doc.text(`Preparado por: ${nombreActual()}`, 14, 31);
+        doc.setTextColor(0, 0, 0);
+
+        doc.autoTable({
+            startY: 38,
+            head: [['Código', 'Cantidad', 'Descripción']],
+            body: filas,
+            styles: { fontSize: 9, cellPadding: 4, valign: 'middle' },
+            headStyles: { fillColor: [34, 55, 73] },
+            columnStyles: { 0: { cellWidth: 24 }, 1: { cellWidth: 24 } },
+        });
+
+        let y = doc.lastAutoTable.finalY + 22;
+        doc.setFontSize(10);
+        doc.text('Bultos: _______________________', 14, y);
+        y += 24;
+        doc.line(14, y, 92, y);
+        doc.text('Remitido por (firma y aclaración)', 14, y + 5);
+        doc.line(118, y, 196, y);
+        doc.text('Recepción de la mercadería', 118, y + 5);
+
+        doc.save(`remito_afilado_${new Date().toISOString().slice(0, 10)}.pdf`);
+    }
+
     // --- TOASTS ---
     function toast(msg, tipo) {
         const el = document.createElement('div');
@@ -874,12 +924,14 @@
 
     const CTX = {
         metal: {
+            // 'uso' queda como estado heredado (por si hay piezas viejas ahí), pero ya no
+            // forma parte del recorrido normal: de stock se pasa directo a "pendiente".
             estados: ['stock', 'uso', 'pendiente', 'afilar', 'baja'],
             grupos: () => diametros,
             getArr: (g) => dbMetal[g] || (dbMetal[g] = []),
             guardarGrupo: (g) => dbRef.child(String(g)).set(dbMetal[g] || []),
-            siguiente: { stock: 'uso', uso: 'pendiente', pendiente: 'afilar', afilar: 'stock' },
-            etiqueta: { stock: 'Poner en máquina', uso: 'Retirar', pendiente: 'Enviar a afilar', afilar: 'Recibir' },
+            siguiente: { stock: 'pendiente', uso: 'pendiente', pendiente: 'afilar', afilar: 'stock' },
+            etiqueta: { stock: 'Preparar', uso: 'Retirar', pendiente: 'Enviar a afilar', afilar: 'Recibir' },
             clase: { stock: 'stock', uso: 'uso', pendiente: 'pendiente', afilar: 'afilar', baja: 'baja' },
             textoEstado: { stock: 'stock', uso: 'uso', pendiente: 'pendiente', afilar: 'afilar', baja: 'baja' },
             contadorCampo: 'afilados',
@@ -1077,6 +1129,10 @@
         cfg.guardarGrupo(grupo);
         cerrarModal('modalConfirm');
         toast(`${cod} → ${textoNuevo}`);
+
+        if (ctx === 'metal' && nuevoEstado === 'pendiente') {
+            generarRemitoPDF([{ grupo, cod }]);
+        }
     }
 
     // --- MODAL DE CONFIRMACIÓN GENÉRICO ---
@@ -1232,6 +1288,7 @@
         const cfg = CTX[ctx];
         const items = clavesSeleccion(ctx);
         const gruposTocados = new Set();
+        const movidos = [];
         let n = 0;
         items.forEach(({ grupo, p }) => {
             if (cfg.siguiente[p.estado] === nuevoEstado) {
@@ -1244,6 +1301,7 @@
                 const textoNuevo = (cfg.textoEstado && cfg.textoEstado[nuevoEstado]) || nuevoEstado;
                 p.eventos.push({ fecha: new Date().toLocaleString(), msg: `Cambiado a ${textoNuevo.toUpperCase()} por ${nombreActual()} (lote de ${items.length})` });
                 gruposTocados.add(grupo);
+                movidos.push({ grupo, cod: p.id });
                 n++;
             }
         });
@@ -1251,6 +1309,10 @@
         seleccion[ctx].clear();
         toast(`${n} piezas actualizadas`);
         renderTab(ctx);
+
+        if (ctx === 'metal' && nuevoEstado === 'pendiente' && movidos.length) {
+            generarRemitoPDF(movidos);
+        }
     }
 
     // Caso especial diamante: recibir en lote piezas que están "en afilado".
