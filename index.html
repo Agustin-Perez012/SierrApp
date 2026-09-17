@@ -845,8 +845,6 @@
         mostrarSesionActiva();
     }
 
-    mostrarSesionActiva();
-
     // --- MENÚ LATERAL / MANUAL DE USO ---
     function toggleMenuLateral() {
         document.getElementById('menuLateral').classList.toggle('show');
@@ -1063,6 +1061,8 @@
     let filtroGrupo = { metal: null, dia: null };
     let modoLote = { metal: false, dia: false };
     let seleccion = { metal: new Set(), dia: new Set() };
+
+    mostrarSesionActiva();
 
     dbRef.on('value', (snapshot) => {
         dbMetal = snapshot.val() || {};
