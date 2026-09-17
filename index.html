@@ -161,6 +161,13 @@
         font-size: 0.86em; margin: 6px 0 18px; border-radius: 0 3px 3px 0; color: var(--ink);
     }
 
+    .aviso-solo-lectura {
+        background: #EDEBE4; border-left: 3px solid var(--ink-soft); padding: 10px 16px;
+        font-size: 0.88em; color: var(--ink-soft); margin-bottom: 16px; border-radius: 0 3px 3px 0;
+        font-weight: 600;
+    }
+    .solo-lectura-tag { font-size: 0.78em; color: var(--ink-soft); font-style: italic; }
+
     /* ---------- App tabs (Metal Duro / Diamante) ---------- */
     .app-tabs {
         display: flex; background: var(--steel-dark); padding: 0 24px;
@@ -580,6 +587,10 @@
     <!-- ================= PANEL METAL DURO ================= -->
     <div id="panelMetal" class="tab-panel active">
 
+        <div id="avisoSoloLecturaMetal" class="aviso-solo-lectura" style="display:none;">
+            🔒 Solo lectura — tu usuario puede ver Metal Duro pero no hacer cambios acá.
+        </div>
+
         <div class="stat-ledger">
             <div class="stat-tile stock" onclick="filtrarEstado('metal','stock')" id="card-stock">
                 <span class="stat-value" id="total-stock">0</span>
@@ -614,7 +625,7 @@
             <button class="btn-lote" id="btnModoLote" onclick="toggleModoLote('metal')">☐ Seleccionar varias</button>
             <button class="btn-csv" onclick="descargarRemitoPendientes()">📄 Remito de afilado</button>
 
-            <div class="panel-registro">
+            <div class="panel-registro" id="panelRegistroMetal">
                 <input type="text" id="nuevoCodigo" placeholder="Código (ej: 2045)">
                 <select id="nuevoEstado">
                     <option value="stock">Cargar en Stock</option>
@@ -741,7 +752,7 @@
         <div class="notas-box">
             <label style="font-size:0.8em; font-weight:700; color:var(--ink-soft);">NOTAS</label>
             <textarea id="notasTexto" placeholder="Observaciones sobre esta pieza..."></textarea>
-            <button class="btn-guardar-nota" onclick="guardarNotaGenerico()">Guardar nota</button>
+            <button class="btn-guardar-nota" id="btnGuardarNota" onclick="guardarNotaGenerico()">Guardar nota</button>
         </div>
     </div>
 </div>
@@ -791,11 +802,13 @@
 
     // --- LOGIN (2 usuarios fijos, valida contraseña, identifica en el historial) ---
     const CREDENCIALES_LOGIN = { 'Compras': 'A12PZ', 'Mantenimiento': 'MANT1975' };
-    const PERMISOS_LOGIN = { 'Compras': ['metal', 'dia'], 'Mantenimiento': ['dia'] };
+    const PERMISOS_LOGIN = { 'Compras': ['metal', 'dia'], 'Mantenimiento': ['metal', 'dia'] }; // qué pestañas VE cada usuario
+    const PERMISOS_EDICION = { 'Compras': ['metal', 'dia'], 'Mantenimiento': ['dia'] };         // en cuáles puede hacer MOVIMIENTOS
     const LOGIN_KEY = 'herramientas_usuario_activo';
 
     function nombreActual() { return localStorage.getItem(LOGIN_KEY) || 'Sin identificar'; }
     function tabsPermitidas() { return PERMISOS_LOGIN[nombreActual()] || ['metal', 'dia']; }
+    function puedeEditar(ctx) { return (PERMISOS_EDICION[nombreActual()] || ['metal', 'dia']).includes(ctx); }
 
     function aplicarPermisos() {
         const permitidas = tabsPermitidas();
@@ -803,6 +816,12 @@
         document.getElementById('tabBtnDia').style.display = permitidas.includes('dia') ? '' : 'none';
         document.getElementById('menuItemManual').style.display = permitidas.includes('metal') ? '' : 'none';
         if (!permitidas.includes(tabActual)) cambiarTab(permitidas[0]);
+
+        const soloLecturaMetal = !puedeEditar('metal');
+        document.getElementById('panelRegistroMetal').style.display = soloLecturaMetal ? 'none' : '';
+        document.getElementById('btnModoLote').style.display = soloLecturaMetal ? 'none' : '';
+        document.getElementById('avisoSoloLecturaMetal').style.display = soloLecturaMetal ? 'block' : 'none';
+        if (typeof renderMetal === 'function') renderMetal(); // re-pinta filas sin botones de acción si corresponde
     }
 
     function mostrarSesionActiva() {
@@ -1116,6 +1135,7 @@
     });
 
     function agregarSierra() {
+        if (!puedeEditar('metal')) { toast('Tu usuario no puede hacer cambios acá.', 'error'); return; }
         const codInput = document.getElementById('nuevoCodigo');
         const cod = codInput.value.trim().toUpperCase();
         const estadoInic = document.getElementById('nuevoEstado').value;
@@ -1198,6 +1218,7 @@
 
     // --- MOVIMIENTOS (genérico para ambos contextos) ---
     function moverGenerico(ctx, grupo, cod, nuevoEstado) {
+        if (!puedeEditar(ctx)) { toast('Tu usuario no puede hacer cambios acá.', 'error'); return; }
         if (nuevoEstado === 'baja') {
             const nombreG = CTX[ctx].nombreGrupo(grupo);
             confirmar(
@@ -1258,12 +1279,15 @@
             </div>
         `).reverse().join('');
         document.getElementById('notasTexto').value = p.notas || '';
+        document.getElementById('notasTexto').disabled = !puedeEditar(ctx);
+        document.getElementById('btnGuardarNota').style.display = puedeEditar(ctx) ? '' : 'none';
         document.getElementById('modalHistorial').style.display = "flex";
     }
 
     function guardarNotaGenerico() {
         if (!historialActual) return;
         const { ctx, grupo, cod } = historialActual;
+        if (!puedeEditar(ctx)) { toast('Tu usuario no puede hacer cambios acá.', 'error'); return; }
         const p = buscarPieza(ctx, grupo, cod);
         if (!p) return;
         p.notas = document.getElementById('notasTexto').value;
@@ -1301,6 +1325,7 @@
 
     // --- SELECCIÓN MÚLTIPLE / LOTE (genérico) ---
     function toggleModoLote(ctx) {
+        if (!puedeEditar(ctx)) { toast('Tu usuario no puede hacer cambios acá.', 'error'); return; }
         modoLote[ctx] = !modoLote[ctx];
         seleccion[ctx].clear();
         const tablaId = ctx === 'metal' ? 'tablaSierras' : 'tablaDia';
@@ -1383,6 +1408,7 @@
 
     function ejecutarLote(nuevoEstado) {
         const ctx = tabActual;
+        if (!puedeEditar(ctx)) { toast('Tu usuario no puede hacer cambios acá.', 'error'); return; }
         const cfg = CTX[ctx];
         const items = clavesSeleccion(ctx);
         const gruposTocados = new Set();
@@ -1429,6 +1455,7 @@
 
     function confirmarBajaLote() {
         const ctx = tabActual;
+        if (!puedeEditar(ctx)) { toast('Tu usuario no puede hacer cambios acá.', 'error'); return; }
         const cfg = CTX[ctx];
         const items = clavesSeleccion(ctx).filter(i => i.p.estado !== 'baja');
         confirmar(
@@ -1467,7 +1494,9 @@
 
         let accionesHtml = '';
 
-        if (ctx === 'dia' && p.estado === 'afilando') {
+        if (!puedeEditar(ctx)) {
+            accionesHtml = '<span class="solo-lectura-tag">🔒 Solo lectura</span>';
+        } else if (ctx === 'dia' && p.estado === 'afilando') {
             // Vuelve por defecto a su estado anterior a máquina; se puede elegir otro manualmente.
             const previo = p.estadoPrevio || 'usado';
             accionesHtml += `<button class="btn-sm" style="background:var(--${cfg.clase[previo]})" onclick="moverGenerico('dia','${grupo}','${p.id}','${previo}')">Recibir (→ ${cfg.textoEstado[previo]})</button>`;
@@ -1491,7 +1520,7 @@
             }
         }
 
-        if (p.estado !== 'baja') {
+        if (puedeEditar(ctx) && p.estado !== 'baja') {
             accionesHtml += `<button class="btn-sm" style="background:var(--${cfg.clase.baja || 'baja'})" onclick="moverGenerico('${ctx}','${grupo}','${p.id}','baja')">Baja</button>`;
         }
 
