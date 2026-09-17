@@ -538,7 +538,7 @@
         <h3>Menú</h3>
         <button class="menu-lateral-close" onclick="toggleMenuLateral()" aria-label="Cerrar menú">&times;</button>
     </div>
-    <button class="menu-item" onclick="abrirManual()"><span class="menu-item-icon">📖</span>Manual de uso — Metal Duro</button>
+    <button class="menu-item" id="menuItemManual" onclick="abrirManual()"><span class="menu-item-icon">📖</span>Manual de uso — Metal Duro</button>
 </div>
 
 <div id="modalManual" class="modal">
@@ -791,15 +791,26 @@
 
     // --- LOGIN (2 usuarios fijos, valida contraseña, identifica en el historial) ---
     const CREDENCIALES_LOGIN = { 'Compras': 'A12PZ', 'Mantenimiento': 'MANT1975' };
+    const PERMISOS_LOGIN = { 'Compras': ['metal', 'dia'], 'Mantenimiento': ['dia'] };
     const LOGIN_KEY = 'herramientas_usuario_activo';
 
     function nombreActual() { return localStorage.getItem(LOGIN_KEY) || 'Sin identificar'; }
+    function tabsPermitidas() { return PERMISOS_LOGIN[nombreActual()] || ['metal', 'dia']; }
+
+    function aplicarPermisos() {
+        const permitidas = tabsPermitidas();
+        document.getElementById('tabBtnMetal').style.display = permitidas.includes('metal') ? '' : 'none';
+        document.getElementById('tabBtnDia').style.display = permitidas.includes('dia') ? '' : 'none';
+        document.getElementById('menuItemManual').style.display = permitidas.includes('metal') ? '' : 'none';
+        if (!permitidas.includes(tabActual)) cambiarTab(permitidas[0]);
+    }
 
     function mostrarSesionActiva() {
         const u = localStorage.getItem(LOGIN_KEY);
         if (u && CREDENCIALES_LOGIN[u]) {
             document.getElementById('sesionNombre').innerText = u;
             document.getElementById('loginOverlay').style.display = 'none';
+            aplicarPermisos();
         } else {
             document.getElementById('loginOverlay').style.display = 'flex';
         }
@@ -1067,6 +1078,7 @@
 
     // --- CAMBIO DE PESTAÑA ---
     function cambiarTab(tab) {
+        if (!tabsPermitidas().includes(tab)) return;
         tabActual = tab;
         document.getElementById('tabBtnMetal').classList.toggle('active', tab === 'metal');
         document.getElementById('tabBtnDia').classList.toggle('active', tab === 'dia');
