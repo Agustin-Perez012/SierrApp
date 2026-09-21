@@ -875,6 +875,9 @@
     }
 
     // --- REMITO PDF (se genera al "Preparar" sierras de metal duro) ---
+    // Logo recortado y sin fondo del remito real escaneado (ícono + "MUEBLES Orlandi").
+    const LOGO_ORLANDI_B64 = "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";
+
     // Junta TODAS las sierras que están hoy en "Preparado" (pendiente), sin importar
     // cuándo se prepararon, y arma un solo remito con todas.
     function descargarRemitoPendientes() {
@@ -896,12 +899,12 @@
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
 
-        const SALMON = [232, 205, 195];
-        const AZULITO = [215, 225, 234];
-        const AZUL = [78, 123, 163];
+        // Colores medidos directamente del escaneo real del remito (no estimados a ojo).
+        const HEADER_BG = [255, 244, 234];   // franja superior, salmón muy pálido
+        const FRANJA_IZQ = [253, 228, 214];  // columna código/cantidad del cuerpo
+        const AZUL_PASTEL = [183, 212, 242]; // encabezado de tabla y barra "Recepción"
+        const ROJO_CORAL = [244, 152, 140];  // barra "Remitido por"
         const AZUL_OSCURO = [27, 58, 92];
-        const ROJO = [176, 71, 62];
-        const MARRON = [139, 46, 46];
         const GRIS = [110, 110, 110];
 
         const porDiametro = {};
@@ -915,22 +918,20 @@
 
         const fecha = new Date().toLocaleDateString('es-AR');
 
-        // --- Encabezado (franja salmón, igual al papel) ---
-        doc.setFillColor(...SALMON);
-        doc.rect(0, 0, 210, 34, 'F');
+        // --- Encabezado (franja pálida, igual al papel) ---
+        doc.setFillColor(...HEADER_BG);
+        doc.rect(0, 0, 210, 46, 'F');
 
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(15);
-        doc.setTextColor(...MARRON);
-        doc.text('MUEBLES ORLANDI', 14, 13);
+        // Logo real recortado del remito escaneado
+        doc.addImage('data:image/png;base64,' + LOGO_ORLANDI_B64, 'PNG', 12, 5, 30, 23.4);
 
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7.5);
         doc.setTextColor(...AZUL_OSCURO);
-        doc.text('FÁBRICA DE PLACARES Y JUEGOS DE DORMITORIOS', 14, 18);
+        doc.text('FÁBRICA DE PLACARES Y JUEGOS DE DORMITORIOS', 12, 33);
         doc.setTextColor(...GRIS);
-        doc.text('Independencia 342 - Tel/Fax: 03462-470357/471481 - 2732 Elortondo (Sta. Fe)', 14, 22.5);
-        doc.text('info@mueblesorlandi.com.ar   ·   www.mueblesorlandi.com.ar', 14, 26.5);
+        doc.text('Independencia 342 - Tel/Fax: 03462-470357/471481 - 2732 Elortondo (Sta. Fe)', 12, 37.5);
+        doc.text('info@mueblesorlandi.com.ar   ·   www.mueblesorlandi.com.ar', 12, 41.5);
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(13);
@@ -944,48 +945,52 @@
         doc.text(`Fecha: ${fecha}`, 196, 24, { align: 'right' });
         doc.text(`Preparado por: ${nombreActual()}`, 196, 28, { align: 'right' });
 
-        // --- Franja "Enviado a" (equivalente a Señor/es) ---
-        doc.setFillColor(...AZULITO);
-        doc.rect(0, 34, 210, 9, 'F');
+        // --- Franja "Enviado a" (equivalente a Señor/es — casi blanca en el original) ---
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(9);
         doc.setTextColor(...AZUL_OSCURO);
-        doc.text('Enviado a:', 14, 40);
+        doc.text('Enviado a:', 14, 53);
         doc.setFont('helvetica', 'normal');
         doc.setDrawColor(...GRIS);
-        doc.line(35, 40.5, 196, 40.5);
+        doc.line(35, 53.5, 196, 53.5);
+        doc.setDrawColor(180, 180, 180);
+        doc.line(0, 47, 210, 47);
+        doc.line(0, 58, 210, 58);
 
         // --- Tabla de sierras (código = diámetro) ---
         doc.autoTable({
-            startY: 48,
+            startY: 64,
             margin: { left: 14, right: 14 },
             head: [['CÓDIGO', 'CANTIDAD', 'DESCRIPCIÓN']],
             body: filas,
             styles: { fontSize: 9, cellPadding: 4, valign: 'middle', lineColor: [200, 200, 200] },
-            headStyles: { fillColor: AZUL, textColor: 255, fontStyle: 'bold' },
-            columnStyles: { 0: { cellWidth: 24, halign: 'center' }, 1: { cellWidth: 24, halign: 'center' }, 2: { cellWidth: 134 } },
+            headStyles: { fillColor: AZUL_PASTEL, textColor: AZUL_OSCURO, fontStyle: 'bold' },
+            columnStyles: { 0: { cellWidth: 22, halign: 'center' }, 1: { cellWidth: 28, halign: 'center' }, 2: { cellWidth: 132 } },
             didParseCell: (data) => {
-                if (data.section === 'body' && data.column.index === 0) data.cell.styles.fillColor = SALMON;
-                if (data.section === 'body' && data.column.index === 1) data.cell.styles.fillColor = AZULITO;
+                if (data.section === 'body' && (data.column.index === 0 || data.column.index === 1)) {
+                    data.cell.styles.fillColor = FRANJA_IZQ;
+                }
             },
         });
 
         // --- Bultos ---
         let y = doc.lastAutoTable.finalY + 14;
+        doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
         doc.setTextColor(0, 0, 0);
         doc.text('Bultos: _______________________', 14, y);
 
         // --- Pie: Remitido por / Recepción de la mercadería (igual al papel) ---
         y += 14;
-        doc.setFillColor(...ROJO);
+        doc.setFillColor(...ROJO_CORAL);
         doc.rect(14, y, 88, 7, 'F');
-        doc.setFillColor(...AZUL);
+        doc.setFillColor(...AZUL_PASTEL);
         doc.rect(108, y, 88, 7, 'F');
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(9);
         doc.setTextColor(255, 255, 255);
         doc.text('REMITIDO POR', 58, y + 4.8, { align: 'center' });
+        doc.setTextColor(...AZUL_OSCURO);
         doc.text('RECEPCIÓN DE LA MERCADERÍA', 152, y + 4.8, { align: 'center' });
 
         y += 24;
