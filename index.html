@@ -361,6 +361,50 @@
         max-height: 82vh; overflow-y: auto; position: relative; border-radius: 4px;
     }
     .modal-content.small { max-width: 420px; }
+    .modal-content.wide { max-width: 920px; }
+    .tabla-scroll { overflow-x: auto; }
+
+    /* ---------- Reportes mensuales ---------- */
+    .reportes-stats { display: flex; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
+    .reportes-stat {
+        flex: 1; min-width: 180px; background: #FAF9F5; border: 1px solid var(--line);
+        padding: 16px; text-align: center;
+    }
+    .reportes-stat-value { font-family: 'Fjalla One', sans-serif; font-size: 2.2em; display: block; color: var(--steel); line-height: 1; }
+    .reportes-stat-label { font-size: 0.78em; color: var(--ink-soft); font-weight: 600; margin-top: 6px; display: block; }
+    .tabla-reportes { width: 100%; border-collapse: collapse; min-width: 420px; }
+    .tabla-reportes th, .tabla-reportes td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--line); font-size: 0.92em; }
+    .tabla-reportes th { background: #FAF9F5; color: var(--ink-soft); font-size: 0.72em; text-transform: uppercase; letter-spacing: 0.6px; }
+
+    /* ---------- Movimientos ---------- */
+    .movs-controls { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+    .movs-controls input[type="text"], .movs-controls select {
+        padding: 9px 12px; border: 1px solid var(--line); font-size: 0.88em; font-family: inherit;
+        border-radius: 2px; background: var(--surface);
+    }
+    .movs-controls input[type="text"] { flex: 1.4; min-width: 180px; }
+    .movs-controls select { flex: 1; min-width: 160px; }
+    .tabla-movimientos { width: 100%; border-collapse: collapse; min-width: 760px; }
+    .tabla-movimientos th, .tabla-movimientos td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--line); font-size: 0.86em; vertical-align: top; }
+    .tabla-movimientos th { background: #FAF9F5; color: var(--ink-soft); font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.6px; }
+    .sub-grupo { font-size: 0.82em; color: var(--ink-soft); }
+    .fila-anulada { opacity: 0.55; }
+    .fila-anulada td { text-decoration: line-through; }
+    .fila-anulada td:last-child { text-decoration: none; }
+    .tag-tipo-mov {
+        display: inline-block; padding: 2px 7px; font-size: 0.72em; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.3px; border-radius: 2px; margin-right: 6px;
+    }
+    .tipo-alta { background: var(--stock-bg); color: var(--stock); }
+    .tipo-cambio { background: #EEF2F5; color: var(--steel); }
+    .tipo-baja { background: var(--baja-bg); color: var(--baja); }
+    .tipo-anulacion { background: #EDEBE4; color: var(--ink-soft); }
+    .tag-anulado { font-size: 0.7em; font-weight: 700; color: var(--baja); text-decoration: none !important; display: inline-block; }
+    .btn-anular {
+        padding: 6px 11px; border: 1px solid var(--baja); background: transparent; color: var(--baja);
+        cursor: pointer; font-size: 0.78em; font-weight: 700; border-radius: 2px; white-space: nowrap;
+    }
+    .btn-anular:hover { background: var(--baja-bg); }
     .close-btn {
         position: absolute; right: 18px; top: 14px; cursor: pointer; font-size: 26px;
         color: var(--ink-soft); line-height: 1; background: none; border: none;
@@ -490,11 +534,13 @@
         </svg>
         <h2>Panel de Herramientas</h2>
         <p>Elegí tu usuario para continuar</p>
-        <select id="loginUsuario">
+        <select id="loginUsuario" onchange="onCambioUsuarioLogin()">
             <option value="">Elegí usuario...</option>
             <option value="Compras">Compras</option>
             <option value="Mantenimiento">Mantenimiento</option>
+            <option value="__otro__">Otro...</option>
         </select>
+        <input type="text" id="loginUsuarioOtro" placeholder="Usuario" style="display:none;">
         <input type="password" id="loginPass" placeholder="Contraseña">
         <button onclick="intentarLogin()">Ingresar</button>
         <div id="loginError" class="login-error" style="display:none;"></div>
@@ -546,6 +592,8 @@
         <button class="menu-lateral-close" onclick="toggleMenuLateral()" aria-label="Cerrar menú">&times;</button>
     </div>
     <button class="menu-item" id="menuItemManual" onclick="abrirManual()"><span class="menu-item-icon">📖</span>Manual de uso — Metal Duro</button>
+    <button class="menu-item" id="menuItemReportes" onclick="abrirReportes()"><span class="menu-item-icon">📊</span>Reportes mensuales</button>
+    <button class="menu-item" id="menuItemMovimientos" onclick="abrirMovimientos()"><span class="menu-item-icon">🧾</span>Movimientos</button>
 </div>
 
 <div id="modalManual" class="modal">
@@ -574,6 +622,64 @@
             <li>Buscá y marcá, sierra por sierra, todos los códigos que llegaron afilados.</li>
             <li>Con todas seleccionadas, presioná <strong>"Recibir"</strong>. Pasan automáticamente a Stock, disponibles para su uso.</li>
         </ol>
+    </div>
+</div>
+
+<div id="modalReportes" class="modal">
+    <div class="modal-content wide">
+        <button class="close-btn" onclick="cerrarModal('modalReportes')">&times;</button>
+        <h2 style="margin-top:0;">Reportes mensuales — Metal Duro</h2>
+        <p class="manual-intro">Bajas y afilados recibidos, agrupados por mes.</p>
+        <div class="reportes-stats">
+            <div class="reportes-stat">
+                <span class="reportes-stat-value" id="repPromedioBajas">0</span>
+                <span class="reportes-stat-label">Promedio de bajas / mes</span>
+            </div>
+            <div class="reportes-stat">
+                <span class="reportes-stat-value" id="repPromedioAfilados">0</span>
+                <span class="reportes-stat-label">Promedio de afilados / mes</span>
+            </div>
+        </div>
+        <div class="tabla-scroll">
+            <table class="tabla-reportes">
+                <thead><tr><th>Mes</th><th>Bajas</th><th>Afilados recibidos</th></tr></thead>
+                <tbody id="tablaReportesBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="modalMovimientos" class="modal">
+    <div class="modal-content wide">
+        <button class="close-btn" onclick="cerrarModal('modalMovimientos')">&times;</button>
+        <h2 style="margin-top:0;">Movimientos</h2>
+        <p class="manual-intro">Historial global de movimientos — Metal Duro y Diamante. Solo se puede anular el último movimiento de cada pieza.</p>
+        <div class="movs-controls">
+            <input type="text" id="movBuscarCodigo" placeholder="Buscar código..." oninput="renderMovimientos()">
+            <select id="movFiltroHerramienta" onchange="renderMovimientos()">
+                <option value="">Todas las herramientas</option>
+                <option value="metal">Metal Duro</option>
+                <option value="dia">Diamante</option>
+            </select>
+            <select id="movFiltroTipo" onchange="renderMovimientos()">
+                <option value="">Todos los movimientos</option>
+                <option value="alta">Alta</option>
+                <option value="cambio">Cambio de estado</option>
+                <option value="baja">Baja</option>
+                <option value="anulacion">Anulación</option>
+            </select>
+        </div>
+        <div id="movsNotaTruncado" class="manual-nota" style="display:none;">📌 Hay más movimientos de los que se muestran. Usá la búsqueda o los filtros para acotar el listado.</div>
+        <div class="tabla-scroll">
+            <table class="tabla-movimientos">
+                <thead><tr><th>Fecha</th><th>Herramienta</th><th>Código</th><th>Movimiento</th><th>Usuario</th><th>Acciones</th></tr></thead>
+                <tbody id="tablaMovimientosBody"></tbody>
+            </table>
+        </div>
+        <div id="movsVacio" class="empty-state" style="display:none;">
+            <div class="display">Sin movimientos</div>
+            <div>No hay movimientos que coincidan con la búsqueda o los filtros.</div>
+        </div>
     </div>
 </div>
 
@@ -800,21 +906,27 @@
     const dbRef = firebase.database().ref();             // metal duro: sigue en la raíz (datos existentes)
     const dbRefDia = firebase.database().ref('diamante'); // diamante: nodo aparte, no pisa nada de metal duro
 
-    // --- LOGIN (2 usuarios fijos, valida contraseña, identifica en el historial) ---
-    const CREDENCIALES_LOGIN = { 'Compras': 'A12PZ', 'Mantenimiento': 'MANT1975' };
-    const PERMISOS_LOGIN = { 'Compras': ['metal', 'dia'], 'Mantenimiento': ['metal', 'dia'] }; // qué pestañas VE cada usuario
-    const PERMISOS_EDICION = { 'Compras': ['metal', 'dia'], 'Mantenimiento': ['dia'] };         // en cuáles puede hacer MOVIMIENTOS
+    // --- LOGIN (usuarios fijos, valida contraseña, identifica en el historial) ---
+    const CREDENCIALES_LOGIN = { 'Compras': 'A12PZ', 'Mantenimiento': 'MANT1975', 'Agustin': 'admin2026' };
+    const PERMISOS_LOGIN = { 'Compras': ['metal', 'dia'], 'Mantenimiento': ['metal', 'dia'], 'Agustin': ['metal', 'dia'] }; // qué pestañas VE cada usuario
+    const PERMISOS_EDICION = { 'Compras': ['metal', 'dia'], 'Mantenimiento': ['dia'], 'Agustin': ['metal', 'dia'] };         // en cuáles puede hacer MOVIMIENTOS
+    const PUEDE_VER_REPORTES = ['Compras'];      // reportes mensuales (solo Metal Duro)
+    const PUEDE_VER_MOVIMIENTOS = ['Agustin'];   // log global de movimientos + anular (Metal Duro y Diamante)
     const LOGIN_KEY = 'herramientas_usuario_activo';
 
     function nombreActual() { return localStorage.getItem(LOGIN_KEY) || 'Sin identificar'; }
     function tabsPermitidas() { return PERMISOS_LOGIN[nombreActual()] || ['metal', 'dia']; }
     function puedeEditar(ctx) { return (PERMISOS_EDICION[nombreActual()] || ['metal', 'dia']).includes(ctx); }
+    function puedeVerReportes() { return PUEDE_VER_REPORTES.includes(nombreActual()); }
+    function puedeVerMovimientos() { return PUEDE_VER_MOVIMIENTOS.includes(nombreActual()); }
 
     function aplicarPermisos() {
         const permitidas = tabsPermitidas();
         document.getElementById('tabBtnMetal').style.display = permitidas.includes('metal') ? '' : 'none';
         document.getElementById('tabBtnDia').style.display = permitidas.includes('dia') ? '' : 'none';
         document.getElementById('menuItemManual').style.display = permitidas.includes('metal') ? '' : 'none';
+        document.getElementById('menuItemReportes').style.display = puedeVerReportes() ? '' : 'none';
+        document.getElementById('menuItemMovimientos').style.display = puedeVerMovimientos() ? '' : 'none';
         if (!permitidas.includes(tabActual)) cambiarTab(permitidas[0]);
 
         const soloLecturaMetal = !puedeEditar('metal');
@@ -835,8 +947,15 @@
         }
     }
 
+    function onCambioUsuarioLogin() {
+        const esOtro = document.getElementById('loginUsuario').value === '__otro__';
+        document.getElementById('loginUsuarioOtro').style.display = esOtro ? '' : 'none';
+        if (esOtro) document.getElementById('loginUsuarioOtro').focus();
+    }
+
     function intentarLogin() {
-        const u = document.getElementById('loginUsuario').value;
+        const sel = document.getElementById('loginUsuario').value;
+        const u = sel === '__otro__' ? document.getElementById('loginUsuarioOtro').value.trim() : sel;
         const pass = document.getElementById('loginPass').value;
         const err = document.getElementById('loginError');
 
@@ -860,6 +979,8 @@
     function cerrarSesion() {
         localStorage.removeItem(LOGIN_KEY);
         document.getElementById('loginUsuario').value = '';
+        document.getElementById('loginUsuarioOtro').value = '';
+        document.getElementById('loginUsuarioOtro').style.display = 'none';
         document.getElementById('loginPass').value = '';
         mostrarSesionActiva();
     }
@@ -872,6 +993,19 @@
     function abrirManual() {
         toggleMenuLateral();
         document.getElementById('modalManual').style.display = 'flex';
+    }
+    function abrirReportes() {
+        toggleMenuLateral();
+        construirReporteMensualMetal();
+        document.getElementById('modalReportes').style.display = 'flex';
+    }
+    function abrirMovimientos() {
+        toggleMenuLateral();
+        document.getElementById('movBuscarCodigo').value = '';
+        document.getElementById('movFiltroHerramienta').value = '';
+        document.getElementById('movFiltroTipo').value = '';
+        renderMovimientos();
+        document.getElementById('modalMovimientos').style.display = 'flex';
     }
 
     // --- REMITO PDF (se genera al "Preparar" sierras de metal duro) ---
@@ -1092,12 +1226,15 @@
         dbMetal = snapshot.val() || {};
         diametros.forEach(d => { if (!dbMetal[d]) dbMetal[d] = []; });
         renderMetal();
+        if (document.getElementById('modalMovimientos').style.display === 'flex') renderMovimientos();
+        if (document.getElementById('modalReportes').style.display === 'flex') construirReporteMensualMetal();
     });
 
     dbRefDia.on('value', (snapshot) => {
         dbDia = snapshot.val() || {};
         CATALOGO_DIA.forEach(t => { if (!dbDia[t.id]) dbDia[t.id] = []; });
         renderDia();
+        if (document.getElementById('modalMovimientos').style.display === 'flex') renderMovimientos();
     });
 
     // --- CAMBIO DE PESTAÑA ---
@@ -1139,6 +1276,43 @@
         if (e.key === 'Enter' && !document.getElementById('btnRegistrar').disabled) agregarSierra();
     });
 
+    // --- EVENTOS: helper único para registrar movimientos con todo lo necesario para poder anularlos ---
+    function nuevoEventoId() {
+        return Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+    }
+    // tipo: 'alta' | 'cambio' | 'baja' | 'anulacion'
+    function crearEvento(tipo, estadoAnterior, estadoNuevo, contadorAntes, msg) {
+        return {
+            id: nuevoEventoId(),
+            ts: Date.now(),
+            fecha: new Date().toLocaleString(),
+            usuario: nombreActual(),
+            tipo,
+            estadoAnterior: estadoAnterior || null,
+            estadoNuevo: estadoNuevo || null,
+            contadorAntes: (typeof contadorAntes === 'number') ? contadorAntes : null,
+            anulado: false,
+            msg
+        };
+    }
+    // Para eventos guardados ANTES de esta actualización (solo tenían {fecha, msg}):
+    // reconstruye la fecha real a partir del texto que genera toLocaleString() en este navegador (DD/MM/AAAA, HH:mm:ss).
+    function parsearFechaLegacy(str) {
+        const m = String(str || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4}),?\s*(\d{1,2}):(\d{2}):(\d{2})/);
+        if (!m) return null;
+        const [, dd, mm, yyyy, hh, min, ss] = m;
+        const d = new Date(Number(yyyy), Number(mm) - 1, Number(dd), Number(hh), Number(min), Number(ss));
+        return isNaN(d.getTime()) ? null : d.getTime();
+    }
+    // Último evento NO anulado de una pieza — solo ese se puede anular (evita reescribir historial a mitad de camino).
+    function ultimoEventoActivo(p) {
+        const eventos = p.eventos || [];
+        for (let i = eventos.length - 1; i >= 0; i--) {
+            if (!eventos[i].anulado) return eventos[i];
+        }
+        return null;
+    }
+
     function agregarSierra() {
         if (!puedeEditar('metal')) { toast('Tu usuario no puede hacer cambios acá.', 'error'); return; }
         const codInput = document.getElementById('nuevoCodigo');
@@ -1155,7 +1329,7 @@
         if (!dbMetal[diam]) dbMetal[diam] = [];
         dbMetal[diam].push({
             id: cod, estado: estadoInic, afilados: 0, notas: '',
-            eventos: [{ fecha: new Date().toLocaleString(), msg: `Alta automática en Ø${diam}mm por ${nombreActual()}` }]
+            eventos: [crearEvento('alta', null, estadoInic, 0, `Alta automática en Ø${diam}mm por ${nombreActual()}`)]
         });
 
         codInput.value = '';
@@ -1203,7 +1377,7 @@
         if (!dbDia[tipoId]) dbDia[tipoId] = [];
         dbDia[tipoId].push({
             id: cod, estado: estadoInic, veces: 0, notas: '',
-            eventos: [{ fecha: new Date().toLocaleString(), msg: `Alta en ${tipo.nombre} por ${nombreActual()}` }]
+            eventos: [crearEvento('alta', null, estadoInic, 0, `Alta en ${tipo.nombre} por ${nombreActual()}`)]
         });
 
         codInput.value = '';
@@ -1241,6 +1415,9 @@
         const p = buscarPieza(ctx, grupo, cod);
         if (!p) return;
 
+        const estadoAnterior = p.estado;
+        const contadorAntes = p[cfg.contadorCampo] || 0;
+
         if (ctx === 'dia') {
             // Al entrar a máquina, guardamos en qué estado base estaba para poder devolverla ahí.
             if (nuevoEstado === 'maquina') p.estadoPrevio = p.estado;
@@ -1253,7 +1430,8 @@
         }
         p.estado = nuevoEstado;
         const textoNuevo = (cfg.textoEstado && cfg.textoEstado[nuevoEstado]) || nuevoEstado;
-        p.eventos.push({ fecha: new Date().toLocaleString(), msg: `Cambiado a ${textoNuevo.toUpperCase()} por ${nombreActual()}` });
+        const tipoEvento = nuevoEstado === 'baja' ? 'baja' : 'cambio';
+        p.eventos.push(crearEvento(tipoEvento, estadoAnterior, nuevoEstado, contadorAntes, `Cambiado a ${textoNuevo.toUpperCase()} por ${nombreActual()}`));
         cfg.guardarGrupo(grupo);
         cerrarModal('modalConfirm');
         toast(`${cod} → ${textoNuevo}`);
@@ -1420,6 +1598,8 @@
         let n = 0;
         items.forEach(({ grupo, p }) => {
             if (cfg.siguiente[p.estado] === nuevoEstado) {
+                const estadoAnterior = p.estado;
+                const contadorAntes = p[cfg.contadorCampo] || 0;
                 if (ctx === 'dia') {
                     if (nuevoEstado === 'maquina') p.estadoPrevio = p.estado;
                 } else if (p.estado === cfg.contadorOrigen && nuevoEstado === cfg.siguiente[cfg.contadorOrigen]) {
@@ -1427,7 +1607,8 @@
                 }
                 p.estado = nuevoEstado;
                 const textoNuevo = (cfg.textoEstado && cfg.textoEstado[nuevoEstado]) || nuevoEstado;
-                p.eventos.push({ fecha: new Date().toLocaleString(), msg: `Cambiado a ${textoNuevo.toUpperCase()} por ${nombreActual()} (lote de ${items.length})` });
+                const tipoEvento = nuevoEstado === 'baja' ? 'baja' : 'cambio';
+                p.eventos.push(crearEvento(tipoEvento, estadoAnterior, nuevoEstado, contadorAntes, `Cambiado a ${textoNuevo.toUpperCase()} por ${nombreActual()} (lote de ${items.length})`));
                 gruposTocados.add(grupo);
                 n++;
             }
@@ -1447,9 +1628,11 @@
         const gruposTocados = new Set();
         items.forEach(({ grupo, p }) => {
             const destino = p.estadoPrevio || 'usado';
-            p[cfg.contadorCampo] = (p[cfg.contadorCampo] || 0) + 1;
+            const estadoAnterior = p.estado;
+            const contadorAntes = p[cfg.contadorCampo] || 0;
+            p[cfg.contadorCampo] = contadorAntes + 1;
             p.estado = destino;
-            p.eventos.push({ fecha: new Date().toLocaleString(), msg: `Cambiado a ${cfg.textoEstado[destino].toUpperCase()} por ${nombreActual()} (lote de ${items.length})` });
+            p.eventos.push(crearEvento('cambio', estadoAnterior, destino, contadorAntes, `Cambiado a ${cfg.textoEstado[destino].toUpperCase()} por ${nombreActual()} (lote de ${items.length})`));
             gruposTocados.add(grupo);
         });
         gruposTocados.forEach(g => cfg.guardarGrupo(g));
@@ -1469,8 +1652,10 @@
             () => {
                 const gruposTocados = new Set();
                 items.forEach(({ grupo, p }) => {
+                    const estadoAnterior = p.estado;
+                    const contadorAntes = p[cfg.contadorCampo] || 0;
                     p.estado = 'baja';
-                    p.eventos.push({ fecha: new Date().toLocaleString(), msg: `Cambiado a BAJA por ${nombreActual()} (lote de ${items.length})` });
+                    p.eventos.push(crearEvento('baja', estadoAnterior, 'baja', contadorAntes, `Cambiado a BAJA por ${nombreActual()} (lote de ${items.length})`));
                     gruposTocados.add(grupo);
                 });
                 gruposTocados.forEach(g => cfg.guardarGrupo(g));
@@ -1480,6 +1665,202 @@
                 renderTab(ctx);
             }
         );
+    }
+
+    // --- ANULAR MOVIMIENTO (solo usuario con permiso de Movimientos, y solo el último evento activo de cada pieza) ---
+    function anularEvento(ctx, grupo, cod, eventoId) {
+        if (!puedeVerMovimientos()) { toast('Tu usuario no puede anular movimientos.', 'error'); return; }
+        const cfg = CTX[ctx];
+        const p = buscarPieza(ctx, grupo, cod);
+        if (!p) return;
+        const evento = (p.eventos || []).find(e => e.id === eventoId);
+        if (!evento || evento.tipo === 'anulacion') return;
+
+        const ultimo = ultimoEventoActivo(p);
+        if (!ultimo || ultimo.id !== eventoId) {
+            toast('Solo se puede anular el último movimiento de la pieza.', 'error');
+            return;
+        }
+
+        const nombreG = cfg.nombreGrupo(grupo);
+
+        if (evento.tipo === 'alta') {
+            confirmar(
+                'Anular alta',
+                `Este es el alta de la pieza ${cod} (${nombreG}). Anularla ELIMINA la pieza por completo del sistema. ¿Confirmás?`,
+                () => {
+                    const arr = cfg.getArr(grupo);
+                    const idx = arr.findIndex(x => x.id === cod);
+                    if (idx !== -1) arr.splice(idx, 1);
+                    cfg.guardarGrupo(grupo);
+                    cerrarModal('modalConfirm');
+                    toast(`Alta de ${cod} anulada — pieza eliminada`);
+                    renderMovimientos();
+                    renderTab(ctx);
+                }
+            );
+            return;
+        }
+
+        const textoDesde = (cfg.textoEstado && cfg.textoEstado[evento.estadoNuevo]) || evento.estadoNuevo;
+        const textoHacia = (cfg.textoEstado && cfg.textoEstado[evento.estadoAnterior]) || evento.estadoAnterior;
+        confirmar(
+            'Anular movimiento',
+            `¿Anular el cambio de ${cod} (${nombreG}) a ${String(textoDesde).toUpperCase()}? Vuelve a ${String(textoHacia).toUpperCase()}.`,
+            () => {
+                p.estado = evento.estadoAnterior;
+                if (evento.contadorAntes !== null && evento.contadorAntes !== undefined) {
+                    p[cfg.contadorCampo] = evento.contadorAntes;
+                }
+                evento.anulado = true;
+                evento.anuladoPor = nombreActual();
+                evento.anuladoFecha = new Date().toLocaleString();
+                p.eventos.push(crearEvento('anulacion', evento.estadoNuevo, evento.estadoAnterior, null, `Movimiento anulado por ${nombreActual()} (volvió a ${String(textoHacia).toUpperCase()})`));
+                cfg.guardarGrupo(grupo);
+                cerrarModal('modalConfirm');
+                toast(`Movimiento anulado — ${cod} volvió a ${textoHacia}`);
+                renderMovimientos();
+                renderTab(ctx);
+            }
+        );
+    }
+
+    function esUltimoEventoActivo(ctx, grupo, cod, eventoId) {
+        const p = buscarPieza(ctx, grupo, cod);
+        if (!p) return false;
+        const ultimo = ultimoEventoActivo(p);
+        return !!ultimo && ultimo.id === eventoId;
+    }
+
+    // --- MOVIMIENTOS (log global, Metal Duro + Diamante) ---
+    const MAX_MOVIMIENTOS_MOSTRADOS = 500;
+
+    function recolectarMovimientos() {
+        const lista = [];
+        diametros.forEach(d => {
+            (dbMetal[d] || []).forEach(p => {
+                (p.eventos || []).forEach(e => lista.push({ ctxKey: 'metal', grupo: d, cod: p.id, evento: e }));
+            });
+        });
+        CATALOGO_DIA.forEach(t => {
+            (dbDia[t.id] || []).forEach(p => {
+                (p.eventos || []).forEach(e => lista.push({ ctxKey: 'dia', grupo: t.id, cod: p.id, evento: e }));
+            });
+        });
+        lista.forEach(item => {
+            const e = item.evento;
+            item.ts = e.ts || parsearFechaLegacy(e.fecha) || 0;
+            item.usuario = e.usuario || (/por\s+([^(]+?)(?:\s*\(lote|$)/.exec(e.msg || '') || [])[1]?.trim() || 'Sin identificar';
+            item.tipo = e.tipo || (/^Alta/.test(e.msg || '') ? 'alta' : (/Cambiado a BAJA/i.test(e.msg || '') ? 'baja' : 'cambio'));
+        });
+        lista.sort((a, b) => b.ts - a.ts);
+        return lista;
+    }
+
+    function etiquetaTipoMov(tipo) {
+        return { alta: 'ALTA', cambio: 'CAMBIO', baja: 'BAJA', anulacion: 'ANULACIÓN' }[tipo] || String(tipo).toUpperCase();
+    }
+
+    function filaMovimientoHTML(it) {
+        const e = it.evento;
+        const cfg = CTX[it.ctxKey];
+        const herramientaLabel = it.ctxKey === 'metal' ? '🔧 Metal Duro' : '💎 Diamante';
+        const nombreG = cfg.nombreGrupo(it.grupo);
+        const anulado = !!e.anulado;
+        const esAnulacion = it.tipo === 'anulacion';
+
+        let movimientoHtml;
+        if (e.id && e.estadoNuevo) {
+            const de = e.estadoAnterior ? ((cfg.textoEstado && cfg.textoEstado[e.estadoAnterior]) || e.estadoAnterior) : '—';
+            const a = (cfg.textoEstado && cfg.textoEstado[e.estadoNuevo]) || e.estadoNuevo;
+            movimientoHtml = `<span class="tag-tipo-mov tipo-${it.tipo}">${etiquetaTipoMov(it.tipo)}</span> ${de} → ${a}`;
+        } else {
+            movimientoHtml = e.msg || '';
+        }
+
+        const puedeAnular = puedeVerMovimientos() && !!e.id && !anulado && !esAnulacion && esUltimoEventoActivo(it.ctxKey, it.grupo, it.cod, e.id);
+
+        return `<tr class="${anulado ? 'fila-anulada' : ''}">
+            <td data-label="Fecha">${e.fecha || '—'}</td>
+            <td data-label="Herramienta">${herramientaLabel}<br><span class="sub-grupo">${nombreG}</span></td>
+            <td data-label="Código"><code>${it.cod}</code></td>
+            <td data-label="Movimiento">${movimientoHtml}${anulado ? ' <span class="tag-anulado">ANULADO</span>' : ''}</td>
+            <td data-label="Usuario">${it.usuario}</td>
+            <td data-label="Acciones">${puedeAnular ? `<button class="btn-anular" onclick="anularEvento('${it.ctxKey}','${it.grupo}','${it.cod}','${e.id}')">Anular</button>` : ''}</td>
+        </tr>`;
+    }
+
+    function renderMovimientos() {
+        if (!puedeVerMovimientos()) return;
+        const busq = (document.getElementById('movBuscarCodigo').value || '').toLowerCase().trim();
+        const filtroHerr = document.getElementById('movFiltroHerramienta').value;
+        const filtroTipo = document.getElementById('movFiltroTipo').value;
+
+        let lista = recolectarMovimientos();
+        if (busq) lista = lista.filter(it => it.cod.toLowerCase().includes(busq));
+        if (filtroHerr) lista = lista.filter(it => it.ctxKey === filtroHerr);
+        if (filtroTipo) lista = lista.filter(it => it.tipo === filtroTipo);
+
+        const truncado = lista.length > MAX_MOVIMIENTOS_MOSTRADOS;
+        const mostrar = lista.slice(0, MAX_MOVIMIENTOS_MOSTRADOS);
+
+        document.getElementById('tablaMovimientosBody').innerHTML = mostrar.map(filaMovimientoHTML).join('');
+        document.getElementById('movsVacio').style.display = mostrar.length === 0 ? 'block' : 'none';
+        document.querySelector('.tabla-movimientos').style.display = mostrar.length === 0 ? 'none' : 'table';
+        document.getElementById('movsNotaTruncado').style.display = truncado ? 'block' : 'none';
+    }
+
+    // --- REPORTES MENSUALES (solo Compras, solo Metal Duro) ---
+    const NOMBRES_MES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    function obtenerMesKey(ts) {
+        const d = new Date(ts);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    }
+    function nombreMes(key) {
+        const [y, m] = key.split('-');
+        return `${NOMBRES_MES[parseInt(m, 10) - 1]} ${y}`;
+    }
+    // Para eventos viejos (sin tipo/estados estructurados) clasificamos por el texto guardado.
+    // En Metal Duro, "Cambiado a STOCK" solo puede llegar desde Afilar (es el único camino al stock), por eso vale como "afilado recibido".
+    function clasificarEventoLegacyMetal(e) {
+        const msg = e.msg || '';
+        if (/Cambiado a BAJA/i.test(msg)) return 'baja';
+        if (/Cambiado a STOCK/i.test(msg)) return 'afilado';
+        return null;
+    }
+
+    function construirReporteMensualMetal() {
+        const porMes = {};
+        diametros.forEach(d => {
+            (dbMetal[d] || []).forEach(p => {
+                (p.eventos || []).forEach(e => {
+                    if (e.anulado || e.tipo === 'anulacion') return;
+                    const ts = e.ts || parsearFechaLegacy(e.fecha);
+                    if (!ts) return;
+                    const key = obtenerMesKey(ts);
+                    if (!porMes[key]) porMes[key] = { bajas: 0, afilados: 0 };
+                    if (e.id) {
+                        if (e.tipo === 'baja') porMes[key].bajas++;
+                        if (e.estadoAnterior === 'afilar' && e.estadoNuevo === 'stock') porMes[key].afilados++;
+                    } else {
+                        const clasif = clasificarEventoLegacyMetal(e);
+                        if (clasif === 'baja') porMes[key].bajas++;
+                        if (clasif === 'afilado') porMes[key].afilados++;
+                    }
+                });
+            });
+        });
+
+        const meses = Object.keys(porMes).sort().reverse();
+        const totalBajas = meses.reduce((s, k) => s + porMes[k].bajas, 0);
+        const totalAfilados = meses.reduce((s, k) => s + porMes[k].afilados, 0);
+        const nMeses = meses.length || 1;
+        document.getElementById('repPromedioBajas').innerText = (totalBajas / nMeses).toFixed(1);
+        document.getElementById('repPromedioAfilados').innerText = (totalAfilados / nMeses).toFixed(1);
+
+        document.getElementById('tablaReportesBody').innerHTML = meses.length
+            ? meses.map(k => `<tr><td>${nombreMes(k)}</td><td>${porMes[k].bajas}</td><td>${porMes[k].afilados}</td></tr>`).join('')
+            : `<tr><td colspan="3" style="text-align:center;color:var(--ink-soft);padding:20px;">Todavía no hay movimientos con fecha registrada para reportar.</td></tr>`;
     }
 
     function filtrarEstado(ctx, e) {
